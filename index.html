@@ -36,7 +36,7 @@
     background: var(--accent);
     color: #f5f0e8;
   }
-  header h1 { font-size: 1rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; }
+  header h1 { font-size: 1rem; font-weight: 800; letter-spacing: 0.2em; }
   header span { font-family: 'Space Mono', monospace; font-size: 0.6rem; opacity: 0.5; }
 
   .main {
@@ -59,7 +59,6 @@
     font-family: 'Space Mono', monospace;
     font-size: 0.55rem;
     letter-spacing: 0.18em;
-    text-transform: uppercase;
     color: var(--muted);
     margin-bottom: 8px;
   }
@@ -187,7 +186,6 @@
     font-size: 0.5rem;
     color: var(--muted);
     letter-spacing: 0.12em;
-    text-transform: uppercase;
   }
   .create-axis-btn {
     width: 100%;
@@ -241,7 +239,6 @@
     font-family: 'Space Mono', monospace;
     font-size: 0.55rem;
     letter-spacing: 0.18em;
-    text-transform: uppercase;
     color: #2980b9;
     text-decoration: underline dotted;
     cursor: pointer;
@@ -252,7 +249,6 @@
     font-family: 'Space Mono', monospace;
     font-size: 0.55rem;
     letter-spacing: 0.18em;
-    text-transform: uppercase;
     color: #c0392b;
     text-decoration: underline dotted;
     cursor: pointer;
@@ -411,7 +407,7 @@
 
   .modal h3 { font-size: 1rem; font-weight: 800; }
   .modal .modal-subtitle { font-size: 0.65rem; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: -8px; }
-  .modal label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 5px; font-family: 'Space Mono', monospace; }
+  .modal label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; display: block; margin-bottom: 5px; font-family: 'Space Mono', monospace; }
   .modal input, .modal select { width: 100%; background: var(--panel); border: 1.5px solid var(--border); color: var(--text); font-family: 'Syne', sans-serif; font-size: 0.82rem; padding: 9px 12px; border-radius: 7px; outline: none; appearance: none; }
   .modal input:focus, .modal select:focus { border-color: var(--accent); }
 
@@ -1035,8 +1031,8 @@ function renderGrid() {
           const xReason = ex.axisReasons && ex.axisReasons[axes.x] ? `<div style="opacity:0.75;font-size:0.58rem;margin-top:2px;line-height:1.4;font-style:italic">${ex.axisReasons[axes.x]}</div>` : '';
           const yReason = ex.axisReasons && ex.axisReasons[axes.y] ? `<div style="opacity:0.75;font-size:0.58rem;margin-top:2px;line-height:1.4;font-style:italic">${ex.axisReasons[axes.y]}</div>` : '';
           document.getElementById('tip-vals').innerHTML =
-            `<div style="margin-bottom:4px"><span style="opacity:0.6;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em">${axes.x}</span><br><strong>${xLabel}</strong>${xReason}</div>` +
-            `<div><span style="opacity:0.6;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em">${axes.y}</span><br><strong>${yLabel}</strong>${yReason}</div>` +
+            `<div style="margin-bottom:4px"><span style="opacity:0.6;font-size:0.58rem;letter-spacing:0.1em">${axes.x}</span><br><strong>${xLabel}</strong>${xReason}</div>` +
+            `<div><span style="opacity:0.6;font-size:0.58rem;letter-spacing:0.1em">${axes.y}</span><br><strong>${yLabel}</strong>${yReason}</div>` +
             (ex.url ? `<div style="margin-top:6px;opacity:0.6;font-size:0.5rem">🔗 klikk for å åpne</div>` : '');
           const tip = document.getElementById('tooltip');
           tip.style.left = (e2.clientX+14)+'px';
