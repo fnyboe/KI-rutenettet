@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vurder KI-applikasjon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --panel: #ede8df;
+    --border: #d4cdc0;
+    --text: #1a1a14;
+    --muted: #8a8070;
+    --accent: #1a1a14;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: 56px 1fr;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 2px solid var(--accent);
+    background: var(--accent);
+    color: #f5f0e8;
+  }
+  header h1 { font-size: 1rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; }
+  header span { font-family: 'Space Mono', monospace; font-size: 0.6rem; opacity: 0.5; }
+
+  .main {
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  .sidebar {
+    border-right: 2px solid var(--accent);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .sec-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .axis-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .axis-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .axis-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .axis-badge.x { background: #c0392b22; color: #c0392b; border: 1.5px solid #c0392b88; }
+  .axis-badge.y { background: #2980b922; color: #2980b9; border: 1.5px solid #2980b988; }
+
+  select {
+    width: 100%;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .axis-help {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.52rem;
+    cursor: pointer;
+    border-bottom: 1px dashed;
+    display: inline-block;
+    margin-top: 3px;
+    padding-bottom: 1px;
+    transition: opacity 0.2s;
+  }
+  .axis-help:hover { opacity: 0.7; }
+
+  .ex-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .ex-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+  }
+
+  .ex-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .ex-info { flex: 1; min-width: 0; }
+  .ex-name { font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ex-pos { font-family: 'Space Mono', monospace; font-size: 0.5rem; color: var(--muted); margin-top: 2px; }
+
+  .ex-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .ex-delete:hover { color: #c0392b; background: #c0392b11; }
+
+  .add-btn {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-btn:hover { background: var(--accent); color: var(--bg); }
+
+  /* New axis creator */
+  .new-axis-form input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .new-axis-form input:focus { border-color: var(--accent); }
+  .new-axis-form input.small { font-size: 0.68rem; padding: 5px 9px; }
+  .val-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 9px;
+  }
+  .val-row-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .create-axis-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    color: #f5f0e8;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+  .create-axis-btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
+  .create-axis-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .axis-creator-toggle {
+    width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--border);
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 9px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .axis-creator-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .axis-creator-panel { display: none; flex-direction: column; gap: 8px; }
+  .axis-creator-panel.open { display: flex; }
+  .error-msg { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: #c0392b; display: none; }
+  .error-msg.on { display: block; }
+
+  /* Grid area */
+  .grid-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 12px;
+    overflow: auto;
+  }
+
+  .y-axis-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #2980b9;
+    text-decoration: underline dotted;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .x-axis-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #c0392b;
+    text-decoration: underline dotted;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .grid-with-labels { display: flex; gap: 6px; }
+
+  .y-labels {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 80px;
+    text-align: right;
+  }
+
+  .y-label, .x-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.52rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s;
+    line-height: 1.3;
+  }
+  .y-label:hover, .x-label:hover { color: var(--accent); }
+
+  .x-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 6px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 200px);
+    grid-template-rows: repeat(3, 200px);
+    border: 2px solid var(--accent);
+    box-shadow: 6px 6px 0 var(--accent);
+  }
+
+  .cell {
+    border: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-content: flex-start;
+    gap: 5px;
+    padding: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: filter 0.15s;
+    overflow-y: auto;
+  }
+  .cell:hover { filter: brightness(0.96); }
+  .cell:hover .cell-add-hint { opacity: 1; }
+
+  .cell-add-hint {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.45rem;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  .ex-dot {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.52rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.4);
+    transition: transform 0.15s;
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 1.2;
+    padding: 3px;
+  }
+  .ex-dot:hover { transform: scale(1.12); }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--accent);
+    color: #f5f0e8;
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 200;
+    max-width: 300px;
+  }
+  .tooltip.on { opacity: 1; }
+  .tn { font-weight: 700; margin-bottom: 3px; }
+  .tv { font-family: 'Space Mono', monospace; font-size: 0.58rem; color: rgba(245,240,232,0.7); }
+
+  .axis-tip {
+    position: fixed;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 0.72rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 200;
+    max-width: 280px;
+    box-shadow: 4px 4px 0 var(--accent);
+  }
+  .axis-tip.on { opacity: 1; }
+  .at-title { font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; }
+  .at-desc { font-size: 0.65rem; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+  .at-val { display: flex; gap: 10px; margin-bottom: 7px; }
+  .at-num { font-family: 'Space Mono', monospace; font-size: 0.6rem; background: var(--accent); color: var(--bg); border-radius: 4px; padding: 1px 6px; height: fit-content; flex-shrink: 0; }
+  .at-vname { font-weight: 700; font-size: 0.7rem; }
+  .at-vdesc { font-size: 0.6rem; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    display: none;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 28px;
+    width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 8px 8px 0 var(--accent);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .modal h3 { font-size: 1rem; font-weight: 800; }
+  .modal .modal-subtitle { font-size: 0.65rem; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: -8px; }
+  .modal label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 5px; font-family: 'Space Mono', monospace; }
+  .modal input, .modal select { width: 100%; background: var(--panel); border: 1.5px solid var(--border); color: var(--text); font-family: 'Syne', sans-serif; font-size: 0.82rem; padding: 9px 12px; border-radius: 7px; outline: none; appearance: none; }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+
+  .val-desc {
+    font-size: 0.62rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.5;
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: var(--panel);
+    border-radius: 5px;
+    display: none;
+  }
+  .val-desc.visible { display: block; }
+  .val-desc strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+  .btn { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; padding: 9px 20px; border-radius: 7px; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #f5f0e8; box-shadow: 3px 3px 0 rgba(0,0,0,0.2); }
+  .btn-primary:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(0,0,0,0.2); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .color-picker-row { display: flex; gap: 7px; flex-wrap: wrap; }
+  .color-opt { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; transition: all 0.15s; }
+  .color-opt.selected, .color-opt:hover { border-color: var(--accent); transform: scale(1.15); }
+
+  .ai-reasoning {
+    background: #fffef5;
+    border: 1.5px solid #f0c040;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 0.63rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+  .ai-reasoning strong { color: var(--text); }
+
+  .manual-override-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    background: var(--panel);
+    border-radius: 6px;
+    padding: 6px 10px;
+    border-left: 3px solid var(--border);
+  }
+
+  .spinner-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+    animation: blink 1.2s infinite;
+  }
+  .spinner-dot:nth-child(2){animation-delay:0.2s}
+  .spinner-dot:nth-child(3){animation-delay:0.4s}
+  @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:1} }
+
+  /* Question cards */
+  .question-card {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .question-card .q-text { font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+  .q-options { display: flex; flex-direction: column; gap: 5px; }
+  .q-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.68rem;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .q-option:hover { background: var(--bg); border-color: var(--border); }
+  .q-option input[type=radio] { flex-shrink: 0; accent-color: var(--accent); margin-top: 2px; }
+  .q-option.selected { border-color: var(--accent); background: rgba(0,0,0,0.04); font-weight: 700; }
+
+  /* MECE panel */
+  .mece-panel {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.65rem;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vurder KI-applikasjon</h1>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div>
+      <div class="sec-label">Velg akser</div>
+      <div class="axis-block">
+        <div>
+          <div class="axis-row">
+            <span class="axis-badge x">X</span>
+            <select id="axisX" onchange="rebuild()"></select>
+          </div>
+          <span class="axis-help" id="helpX" style="color:#c0392b;border-color:#c0392b88">Hva betyr denne aksen? ↗</span>
+        </div>
+        <div>
+          <div class="axis-row">
+            <span class="axis-badge y">Y</span>
+            <select id="axisY" onchange="rebuild()"></select>
+          </div>
+          <span class="axis-help" id="helpY" style="color:#2980b9;border-color:#2980b988">Hva betyr denne aksen? ↗</span>
+        </div>
+      </div>
+      <button class="axis-creator-toggle" onclick="toggleCreator()" style="margin-top:8px">+ Lag ny akse</button>
+      <div class="axis-creator-panel" id="axisCreatorPanel">
+        <input id="newAxisName" placeholder="Aksenavn — f.eks. Etikk" />
+        <div class="val-row">
+          <div class="val-row-label">Verdi 0 (venstre/bunn)</div>
+          <input class="small" id="val0name" placeholder="Navn — f.eks. Uetisk" />
+          <input class="small" id="val0desc" placeholder="Kort forklaring..." />
+        </div>
+        <div class="val-row">
+          <div class="val-row-label">Verdi 1 (midten)</div>
+          <input class="small" id="val1name" placeholder="Navn — f.eks. Nøytral" />
+          <input class="small" id="val1desc" placeholder="Kort forklaring..." />
+        </div>
+        <div class="val-row">
+          <div class="val-row-label">Verdi 2 (høyre/topp)</div>
+          <input class="small" id="val2name" placeholder="Navn — f.eks. Etisk" />
+          <input class="small" id="val2desc" placeholder="Kort forklaring..." />
+        </div>
+        <div class="error-msg" id="axisError">Fyll inn aksenavn og alle tre verdier!</div>
+        <div class="mece-panel" id="meceResultPanel"></div>
+        <button class="create-axis-btn" id="createAxisBtn" onclick="createAxis()">✦ Sjekk MECE og legg til</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label">Velg type KI-applikasjon</div>
+      <select id="categorySelect" onchange="changeCategory()" style="width:100%;margin-bottom:8px">
+      </select>
+      <button class="axis-creator-toggle" onclick="toggleCatCreator()">+ Definer egen type</button>
+      <div class="axis-creator-panel" id="catCreatorPanel">
+        <input id="newCatName" placeholder="Navn — f.eks. Juridisk KI" />
+        <div class="sec-label" style="margin-top:4px;margin-bottom:0">Systemer i kategorien</div>
+        <div id="catSystemsList" style="display:flex;flex-direction:column;gap:5px"></div>
+        <button class="axis-creator-toggle" onclick="addCatSystemRow()" style="font-size:0.65rem;padding:6px">+ Legg til system</button>
+        <div class="error-msg" id="catError">Fyll inn kategorinavn og minst ett system!</div>
+        <button class="create-axis-btn" id="createCatBtn" onclick="createCategory()">✦ Lag kategori med Claude</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label">Eksempler</div>
+      <div class="ex-list" id="exList"></div>
+      <button class="add-btn" onclick="openModal(null,null)" style="margin-top:8px">+ Legg til eksempel</button>
+    </div>
+  </div>
+
+  <div class="grid-area">
+    <div class="y-axis-label" id="yAxisLabel"></div>
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <div id="categoryTitle" style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;letter-spacing:0.05em;margin-bottom:16px;margin-left:80px;color:var(--text)"></div>
+      <div class="grid-with-labels">
+        <div class="y-labels" id="yLabels"></div>
+        <div>
+          <div class="grid" id="theGrid"></div>
+          <div class="x-labels" id="xLabels"></div>
+        </div>
+      </div>
+      <div id="xAxisLabel" class="x-axis-label" style="margin-left:80px;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltips -->
+<div class="tooltip" id="tooltip">
+  <div class="tn" id="tip-name"></div>
+  <div class="tv" id="tip-vals"></div>
+</div>
+<div class="axis-tip" id="axisTip"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+
+    <!-- STEP 1: Name input -->
+    <div id="step1">
+      <h3>Legg til KI-system</h3>
+      <div class="modal-subtitle">Skriv inn navnet — Claude stiller deg noen enkle spørsmål</div>
+      <div style="margin-top:4px">
+        <label>Navn på KI-systemet</label>
+        <input id="newName" placeholder="f.eks. Google Maps, Midjourney, GPT-4..." />
+      </div>
+      <div>
+        <label>Nettside (valgfritt)</label>
+        <input id="newUrl" placeholder="f.eks. https://maps.google.com" />
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-ghost" onclick="closeModal()">Avbryt</button>
+        <button class="btn btn-primary" id="analyzeBtn" onclick="generateQuestions()">
+          <span id="analyzeBtnText">✦ Neste</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 1b: Answer questions -->
+    <div id="step1b" style="display:none">
+      <h3 id="step1bTitle"></h3>
+      <div class="modal-subtitle">Svar på spørsmålene — Claude plasserer systemet automatisk</div>
+      <div id="questionsContainer" style="display:flex;flex-direction:column;gap:12px;margin-top:4px"></div>
+      <div style="text-align:center;margin-top:8px">
+        <span onclick="skipToManual()" style="font-family:'Space Mono',monospace;font-size:0.58rem;color:var(--muted);cursor:pointer;border-bottom:1px dashed var(--muted)">Vil heller velge plassering selv →</span>
+      </div>
+      <div class="modal-btns" style="margin-top:4px">
+        <button class="btn btn-ghost" onclick="backToStep1()">← Tilbake</button>
+        <button class="btn btn-primary" id="submitAnswersBtn" onclick="submitAnswers()">
+          <span id="submitAnswersTxt">✦ Plasser i rutenettet</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Review & adjust -->
+    <div id="step2" style="display:none">
+      <h3 id="step2title"></h3>
+      <div class="modal-subtitle">Claude sitt forslag — endre gjerne selv om du er uenig</div>
+      <div id="aiReasoning" class="ai-reasoning"></div>
+      <div class="manual-override-hint">✏️ Du kan endre plasseringen under ved å velge selv på hver akse</div>
+      <div id="xField">
+        <label style="display:flex;justify-content:space-between"><span id="lx">X-akse</span><span style="color:var(--muted);font-weight:400">▾ velg selv</span></label>
+        <select id="newX" onchange="updateValDesc('x')"></select>
+        <div id="xValDesc" class="val-desc"></div>
+      </div>
+      <div id="yField">
+        <label style="display:flex;justify-content:space-between"><span id="ly">Y-akse</span><span style="color:var(--muted);font-weight:400">▾ velg selv</span></label>
+        <select id="newY" onchange="updateValDesc('y')"></select>
+        <div id="yValDesc" class="val-desc"></div>
+      </div>
+      <div>
+        <label>Farge</label>
+        <div class="color-picker-row" id="colorPicker"></div>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-ghost" onclick="backToStep1()">← Tilbake</button>
+        <button class="btn btn-primary" onclick="addExample()">Legg til i rutenettet</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+// ─── CATEGORIES ────────────────────────────────────────────────────────────
+// allAxes: Læringsmåte, Formål, Autonomi, Forklarbarhet, Datatype, Sanntid,
+//          Etikk, Risiko, Robusthet, Menneskepåvirkning, Tilpasningsevne, Domene
+const CATEGORIES = {
+  "Velg type KI-applikasjon": null, // null = use default examples
+  "Alle": "all",
+
+  "Språkmodeller (LLM)": [
+    {name:"Claude",    color:"#d35400", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:0,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:2}, url:"https://claude.ai", axisReasons:{"Læringsmåte": "Trent på store tekstmengder med menneskelig feedback (RLHF) for å gi gode svar.", "Formål": "Gir anbefalinger og utfører oppgaver basert på brukerens instruksjoner.", "Autonomi": "Brukeren styrer alltid — Claude handler kun på direkte forespørsel.", "Forklarbarhet": "Indre prosesser er ukjente, men Claude forklarer alltid resonnementet sitt.", "Datatype": "Behandler primært tekst, men kan også lese bilder og dokumenter.", "Sanntid": "Svarer umiddelbart på forespørsler i sanntid.", "Etikk": "Designet med sterkt fokus på sikkerhet og etisk oppførsel av Anthropic.", "Risiko": "Middels risiko — kan brukes til mange formål, men har innebygde sikkerhetsmekanismer.", "Robusthet": "Svært robust — håndterer komplekse og uvanlige forespørsler godt.", "Menneskepåvirkning": "Påvirker indirekte via tekst og anbefalinger, men mennesket tar finale beslutninger.", "Tilpasningsevne": "Modellen oppdateres periodisk, men lærer ikke fra individuelle brukere.", "Domene": "Universell — brukes på tvers av alle fagområder og bransjer."}},
+    {name:"ChatGPT",   color:"#2980b9", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:2}, url:"https://chatgpt.com", axisReasons:{"Læringsmåte": "Trent på internettdata med menneskelig feedback for å tilpasse svarene.", "Formål": "Brukes preskriptivt til å gi råd og løse oppgaver på forespørsel.", "Autonomi": "Krever alltid menneskelig input — handler ikke på egen hånd.", "Forklarbarhet": "Svart boks — man vet ikke nøyaktig hvorfor det gir akkurat det svaret.", "Datatype": "Primært tekst, men støtter også bilder og filer i nyere versjoner.", "Sanntid": "Svarer i sanntid på sekunder.", "Etikk": "Tvetydig — kan misbrukes og har vært kritisert for bias og feilinformasjon.", "Risiko": "Middels — brukes bredt, inkludert i sensitive kontekster som helse og jus.", "Robusthet": "Moderat robust — kan hallusinere og gi feil svar med stor selvtillit.", "Menneskepåvirkning": "Indirekte — påvirker beslutninger, men mennesket har alltid siste ord.", "Tilpasningsevne": "Oppdateres periodisk med nye modeller, men husker ikke mellom samtaler.", "Domene": "Universell — brukes i alle tenkelige kontekster."}},
+    {name:"Gemini",    color:"#16a085", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:2}, url:"https://gemini.google.com", axisReasons:{"Læringsmåte": "Trent av Google på massive datasett med veiledet læring og RLHF.", "Formål": "Preskriptiv — gir anbefalinger, skriver tekst og løser oppgaver.", "Autonomi": "Menneskestyrt — krever input fra bruker for å handle.", "Forklarbarhet": "Svart boks — Googles interne arkitektur er ikke offentlig.", "Datatype": "Multimodal — håndterer tekst, bilder, lyd og video.", "Sanntid": "Svarer i sanntid integrert i Google-produkter.", "Etikk": "Tvetydig — Google har kommersielle interesser som kan påvirke svarene.", "Risiko": "Middels — tett integrert med Google-tjenester gir bred datainnsikt.", "Robusthet": "Moderat — har hatt problemer med faktafeil ved lansering.", "Menneskepåvirkning": "Indirekte — påvirker informasjonssøk og beslutninger globalt.", "Tilpasningsevne": "Periodisk oppdatert med nye modellversjoner.", "Domene": "Universell — designet for alle bruksområder."}},
+    {name:"Mistral",   color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:0,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:2}, url:"https://chat.mistral.ai", axisReasons:{"Læringsmåte": "Veiledet læring på åpne datasett, kjent for effektiv trening.", "Formål": "Preskriptiv — gir svar og løser oppgaver på forespørsel.", "Autonomi": "Menneskestyrt — ingen autonom handling.", "Forklarbarhet": "Svart boks, men åpen kildekode gir mer innsyn enn de fleste.", "Datatype": "Primært tekst og kode.", "Sanntid": "Svarer raskt i sanntid.", "Etikk": "Etisk — europeisk selskap med fokus på åpenhet og personvern.", "Risiko": "Middels — åpen kildekode betyr at hvem som helst kan bruke den uten moderering.", "Robusthet": "Moderat — god ytelse, men mindre testet enn OpenAI og Anthropic.", "Menneskepåvirkning": "Indirekte — brukes som verktøy av utviklere og bedrifter.", "Tilpasningsevne": "Periodisk — nye modeller slippes regelmessig.", "Domene": "Universell — designet som generell assistent og kodemodell."}},
+    {name:"Copilot",   color:"#2c3e50", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:1}, url:"https://copilot.microsoft.com", axisReasons:{"Læringsmåte": "Basert på OpenAI-modeller, trent på kode og tekst med veiledet læring.", "Formål": "Preskriptiv — foreslår kode, tekst og handlinger integrert i Microsoft-produkter.", "Autonomi": "Menneske-i-løkka — foreslår, men brukeren godkjenner alltid.", "Forklarbarhet": "Svart boks, men viser hvilke kilder den bruker ved nettilgang.", "Datatype": "Multimodal — tekst, kode, bilder og dokumenter.", "Sanntid": "Svarer i sanntid integrert i Word, Teams, Outlook osv.", "Etikk": "Tvetydig — Microsoft har kommersielle interesser og samler brukerdata.", "Risiko": "Middels — tett integrert i arbeidsverktøy som behandler sensitiv informasjon.", "Robusthet": "Moderat robust — godt testet i Microsoft-kontekst.", "Menneskepåvirkning": "Indirekte — påvirker arbeidsflyt og beslutninger i bedrifter.", "Tilpasningsevne": "Periodisk oppdatert med nye modeller fra OpenAI.", "Domene": "Tverrfaglig — spesialisert på produktivitet og bedriftsbruk."}},
+    {name:"Llama",     color:"#27ae60", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:0,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:0,Domene:2}, url:"https://llama.meta.com", axisReasons:{"Læringsmåte": "Veiledet læring på store åpne datasett — Meta publiserer vektene åpent.", "Formål": "Preskriptiv — brukes som grunnmodell for ulike applikasjoner.", "Autonomi": "Menneskestyrt — ingen autonom handling ut av boksen.", "Forklarbarhet": "Svart boks, men åpen kildekode gir forskningsmiljøet mulighet til å studere den.", "Datatype": "Primært tekst og kode.", "Sanntid": "Nær sanntid — avhenger av infrastrukturen den kjøres på.", "Etikk": "Etisk — Meta publiserer den åpent, men den kan brukes uten moderering av tredjeparter.", "Risiko": "Middels — åpen tilgang betyr at den kan brukes til skadelige formål.", "Robusthet": "Moderat — godt testet, men moderering avhenger av hvem som deployer den.", "Menneskepåvirkning": "Indirekte — brukes som plattform av andre som bygger tjenester.", "Tilpasningsevne": "Statisk etter trening — men kan finjusteres av hvem som helst.", "Domene": "Universell — designet som generell grunnmodell."}},
+  ],
+
+  "Bildemodeller": [
+    {name:"DALL-E",           color:"#16a085", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:1,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://openai.com/dall-e-3", axisReasons:{"Læringsmåte": "Trent på millioner av bilde-tekst-par med veiledet læring.", "Formål": "Preskriptiv — genererer bilder basert på tekstbeskrivelser.", "Autonomi": "Autonom — produserer bilder uten menneskelig innblanding i prosessen.", "Forklarbarhet": "Svart boks — man vet ikke hvordan tekst omdannes til piksler internt.", "Datatype": "Multimodal — tekst inn, bilde ut.", "Sanntid": "Nær sanntid — genererer bilder på sekunder.", "Etikk": "Tvetydig — kan generere realistiske falske bilder og har opphavsrettsproblematikk.", "Risiko": "Middels — kan misbrukes til desinformasjon og deepfakes.", "Robusthet": "Moderat — god kvalitet, men kan feile på komplekse komposisjoner.", "Menneskepåvirkning": "Indirekte — påvirker kreativ industri og kan brukes til manipulasjon.", "Tilpasningsevne": "Periodisk — nye versjoner slippes med forbedret kvalitet.", "Domene": "Enkeltdomene — spesialisert utelukkende på bildegenerering."}},
+    {name:"Midjourney",       color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:1,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://midjourney.com", axisReasons:{"Læringsmåte": "Trent på kunstbilder og fotografier med veiledet læring.", "Formål": "Preskriptiv — lager kunstneriske bilder fra tekstprompts.", "Autonomi": "Autonom — genererer bilder uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — algoritmen er proprietær og utilgjengelig.", "Datatype": "Multimodal — tekst inn, høykvalitetsbilde ut.", "Sanntid": "Nær sanntid — genererer på sekunder via Discord eller nettleser.", "Etikk": "Tvetydig — kritisert for å trene på kunstneres verk uten samtykke.", "Risiko": "Middels — kan lage realistiske falske bilder av personer.", "Robusthet": "Moderat — svært god estetisk kvalitet, men begrenset tekstgjengivelse.", "Menneskepåvirkning": "Indirekte — påvirker kreative yrker og opphavsrett.", "Tilpasningsevne": "Periodisk — nye versjoner forbedrer kvalitet og stil.", "Domene": "Enkeltdomene — spesialisert på kunstnerisk bildegenerering."}},
+    {name:"Stable Diff.",     color:"#c0392b", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:1,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:0,Domene:0}, url:"https://stability.ai", axisReasons:{"Læringsmåte": "Trent på LAION-datasett med veiledet læring — åpen kildekode.", "Formål": "Preskriptiv — genererer bilder fra tekst.", "Autonomi": "Autonom — kjører lokalt uten menneskelig innblanding.", "Forklarbarhet": "Svart boks, men åpen kildekode gir forskere innsyn i arkitekturen.", "Datatype": "Multimodal — tekst og bilde inn, bilde ut.", "Sanntid": "Nær sanntid — avhenger av maskinvaren den kjøres på.", "Etikk": "Tvetydig — åpen kildekode betyr ingen moderering, kan brukes til skadelig innhold.", "Risiko": "Middels — uten innebygd moderering er misbrukspotensialet høyt.", "Robusthet": "Moderat — kvaliteten varierer mye avhengig av modellversjon og oppsett.", "Menneskepåvirkning": "Indirekte — påvirker kreative bransjer og opphavsrett.", "Tilpasningsevne": "Statisk etter trening — men kan finjusteres lokalt.", "Domene": "Enkeltdomene — spesialisert på bildegenerering."}},
+    {name:"Firefly",          color:"#e67e22", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:0,Risiko:0,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://firefly.adobe.com", axisReasons:{"Læringsmåte": "Trent utelukkende på lisensiert Adobe Stock-innhold — etisk datainnsamling.", "Formål": "Preskriptiv — genererer og redigerer bilder og grafikk.", "Autonomi": "Autonom i genereringen, men integrert i Adobes kreative verktøy.", "Forklarbarhet": "Svart boks, men Adobe er transparent om treningsdataene.", "Datatype": "Primært bildedata fra Adobe Stock.", "Sanntid": "Nær sanntid — integrert i Photoshop og andre Adobe-apper.", "Etikk": "Etisk — eneste store bildemodell trent kun på lisensiert innhold.", "Risiko": "Lav — bevisst designet for å unngå opphavsrettsbrudd.", "Robusthet": "Moderat — god kvalitet innen kommersielt trygge bilder.", "Menneskepåvirkning": "Indirekte — påvirker designere og kreative yrker.", "Tilpasningsevne": "Periodisk oppdatert som del av Adobe Creative Cloud.", "Domene": "Enkeltdomene — spesialisert på kreativt bildearbeid."}},
+    {name:"Sora",             color:"#2980b9", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:0,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://sora.com", axisReasons:{"Læringsmåte": "Trent på store mengder videodata med veiledet læring av OpenAI.", "Formål": "Preskriptiv — genererer videoer fra tekstbeskrivelser.", "Autonomi": "Autonom — lager video uten menneskelig innblanding i prosessen.", "Forklarbarhet": "Svart boks — prosessen er ukjent og utilgjengelig.", "Datatype": "Multimodal — tekst inn, video ut.", "Sanntid": "Batch — videogenerering tar minutter, ikke sekunder.", "Etikk": "Tvetydig — kan lage svært realistiske falske videoer av personer.", "Risiko": "Middels — deepfake-video er et voksende problem for demokrati og tillit.", "Robusthet": "Moderat — imponerende kvalitet, men fortsatt begrenset tilgang.", "Menneskepåvirkning": "Indirekte — kan dramatisk påvirke mediebransjen og tilliten til video.", "Tilpasningsevne": "Periodisk — fortsatt tidlig fase med begrensede oppdateringer.", "Domene": "Enkeltdomene — spesialisert på videogenerering."}},
+    {name:"Leonardo AI", color:"#f39c12", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://leonardo.ai", axisReasons:{"Læringsmåte":"Trent på store mengder merket bildedata med veiledet læring.","Formål":"Genererer bilder på forespørsel — preskriptiv output basert på tekstbeskrivelse.","Autonomi":"Systemet lager bildet helt automatisk uten menneskelig innblanding i selve genereringen.","Forklarbarhet":"Prosessen er en svart boks — man vet ikke nøyaktig hvordan prompten omdannes til bilde.","Datatype":"Jobber primært med ustrukturert data — tekstprompt inn, bilde ut.","Sanntid":"Genererer bilder på sekunder, men ikke ekte sanntid som f.eks. selvkjørende bil.","Etikk":"Tvetydig — kan generere deepfakes eller opphavsrettsproblematisk innhold, men har moderering.","Risiko":"Middels risiko — kan misbrukes til feilinformasjon og falske bilder.","Robusthet":"Moderat robust — håndterer de fleste prompts, men kan feile på komplekse komposisjoner.","Menneskepåvirkning":"Indirekte — påvirker kreativ industri og kan brukes til manipulasjon.","Tilpasningsevne":"Periodisk oppdatert med nye modeller og funksjoner, men ikke selvlærende i produksjon.","Domene":"Enkeltdomene — spesialisert på bildegenerering, særlig spillkunst og konseptdesign."}},
+  ],
+
+  "Anbefalingssystemer": [
+    {name:"Netflix",   color:"#c0392b", allAxes:{Læringsmåte:1,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:1,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://netflix.com", axisReasons:{"Læringsmåte": "Ikke-veiledet læring som finner mønstre i seervaner uten merket data.", "Formål": "Prediktiv — forutsier hva du vil se neste basert på historikk.", "Autonomi": "Autonom — velger innhold uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — algoritmene er hemmelige og forretningskritiske.", "Datatype": "Primært strukturert brukerdata som klikk, visningstid og vurderinger.", "Sanntid": "Nær sanntid — oppdaterer anbefalinger kontinuerlig.", "Etikk": "Tvetydig — kan skape filterbobler og manipulere seervaner.", "Risiko": "Middels — påvirker kulturkonsum og kan forsterke ensidighet.", "Robusthet": "Robust — et av verdens mest veldrevne anbefalingssystemer.", "Menneskepåvirkning": "Indirekte — påvirker kulturelle valg, men ingen direkte livskonsekvenser.", "Tilpasningsevne": "Selvlærende — forbedrer seg kontinuerlig fra brukeratferd.", "Domene": "Enkeltdomene — spesialisert på videostrømming og innholdsanbefaling."}},
+    {name:"Spotify",   color:"#27ae60", allAxes:{Læringsmåte:1,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:0,Risiko:0,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://spotify.com", axisReasons:{"Læringsmåte": "Kombinerer veiledet og ikke-veiledet læring for musikkanbefalinger.", "Formål": "Prediktiv — forutsier hvilken musikk du vil like basert på lyttehistorikk.", "Autonomi": "Autonom — lager spillelister og anbefalinger uten brukerinnput.", "Forklarbarhet": "Svart boks — Discover Weekly-algoritmen er ikke offentlig kjent.", "Datatype": "Primært strukturert lytterdata kombinert med lydanalyse.", "Sanntid": "Nær sanntid — oppdaterer anbefalinger løpende.", "Etikk": "Etisk — lav risiko for etiske brudd, men kritisert for lave artisthonorar.", "Risiko": "Lav — musikk-anbefaling har liten negativ samfunnspåvirkning.", "Robusthet": "Robust — brukes av hundrevis av millioner daglig med høy pålitelighet.", "Menneskepåvirkning": "Indirekte — påvirker musikkvaner, men ingen alvorlige livskonsekvenser.", "Tilpasningsevne": "Selvlærende — tilpasser seg kontinuerlig til lytteratferd.", "Domene": "Enkeltdomene — spesialisert på musikk og podcast-anbefaling."}},
+    {name:"TikTok",    color:"#2c3e50", allAxes:{Læringsmåte:1,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:2,Risiko:2,Robusthet:2,Menneskepåvirkning:2,Tilpasningsevne:2,Domene:0}, url:"https://tiktok.com", axisReasons:{"Læringsmåte": "Ikke-veiledet læring som analyserer mikroatferd som pausetid og replay.", "Formål": "Prediktiv — forutsier nøyaktig hvilke videoer som holder deg lengst på appen.", "Autonomi": "Autonom — velger innhold helt uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — algoritmen er topphemmelig og svært kraftfull.", "Datatype": "Multimodal — analyserer video, lyd, tekst og brukeratferd simultant.", "Sanntid": "Ekte sanntid — tilpasser feeden din på millisekunder.", "Etikk": "Uetisk — bevisst designet for å maksimere avhengighet, særlig hos unge.", "Risiko": "Høy — dokumentert skadelig effekt på unges mentale helse og demokratisk diskurs.", "Robusthet": "Robust — verdens mest effektive anbefalingsalgoritme.", "Menneskepåvirkning": "Direkte — påvirker direkte psykisk helse, politiske meninger og atferd.", "Tilpasningsevne": "Selvlærende — lærer kontinuerlig fra hver enkelt brukers atferd.", "Domene": "Enkeltdomene — spesialisert på kortvideoanbefaling."}},
+    {name:"Amazon",    color:"#e67e22", allAxes:{Læringsmåte:1,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:1,Etikk:1,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://amazon.com", axisReasons:{"Læringsmåte": "Ikke-veiledet læring på kjøpshistorikk og produktinteraksjoner.", "Formål": "Prediktiv — forutsier hva du vil kjøpe basert på atferd og kontekst.", "Autonomi": "Autonom — velger produktanbefalinger uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — algoritmen er forretningshemmelig.", "Datatype": "Primært strukturert handelsdata som kjøp, søk og klikk.", "Sanntid": "Nær sanntid — oppdaterer anbefalinger ved hvert sidebesøk.", "Etikk": "Tvetydig — kan manipulere kjøpsatferd og favoriserer egne produkter.", "Risiko": "Middels — påvirker forbrukeratferd og konkurransesituasjon for selgere.", "Robusthet": "Robust — et av verdens mest velprøvde anbefalingssystemer.", "Menneskepåvirkning": "Indirekte — påvirker forbrukervalg, men ingen alvorlige livskonsekvenser.", "Tilpasningsevne": "Selvlærende — kontinuerlig optimalisering av konverteringsrate.", "Domene": "Enkeltdomene — spesialisert på e-handelsanbefaling."}},
+    {name:"YouTube",   color:"#c0392b", allAxes:{Læringsmåte:1,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:1,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://youtube.com", axisReasons:{"Læringsmåte": "Ikke-veiledet læring på visningsatferd — optimaliserer for visningstid.", "Formål": "Prediktiv — forutsier hvilke videoer som holder deg lengst på plattformen.", "Autonomi": "Autonom — velger neste video uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — Google holder algoritmen hemmelig.", "Datatype": "Multimodal — analyserer video, lyd, metadata og brukeratferd.", "Sanntid": "Ekte sanntid — oppdaterer anbefalinger kontinuerlig.", "Etikk": "Tvetydig — dokumentert for å anbefale ekstremistisk innhold og konspirasjonsteorier.", "Risiko": "Middels — kan radikalisere brukere og spre feilinformasjon i stor skala.", "Robusthet": "Robust — håndterer milliarder av brukere daglig.", "Menneskepåvirkning": "Indirekte — påvirker meningsdannelse og politiske holdninger.", "Tilpasningsevne": "Selvlærende — kontinuerlig optimalisering basert på brukeratferd.", "Domene": "Enkeltdomene — spesialisert på videoinnholdsanbefaling."}},
+  ],
+
+  "Autonome systemer": [
+    {name:"Tesla Auto", color:"#c0392b", allAxes:{Læringsmåte:2,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:1,Risiko:2,Robusthet:2,Menneskepåvirkning:2,Tilpasningsevne:2,Domene:0}, url:"https://tesla.com/autopilot", axisReasons:{"Læringsmåte": "Forsterkningslæring kombinert med veiledet læring på milliardvis av kjøremil.", "Formål": "Preskriptiv — tar kjørebeslutninger i sanntid.", "Autonomi": "Autonom — kjører bilen uten menneskelig innblanding (nivå 2-3).", "Forklarbarhet": "Svart boks — Tesla deler ikke interndetaljer om beslutningsprosessen.", "Datatype": "Multimodal — kamera, radar, GPS og sensordata simultant.", "Sanntid": "Ekte sanntid — beslutninger på millisekunder.", "Etikk": "Tvetydig — har vært involvert i fatale ulykker og overkommuniserer kapabiliteter.", "Risiko": "Høy — tar beslutninger som direkte påvirker liv og helse.", "Robusthet": "Robust — milliarder av kilometer med treningsdata.", "Menneskepåvirkning": "Direkte — tar beslutninger som kan koste liv.", "Tilpasningsevne": "Selvlærende — forbedres kontinuerlig fra alle Teslaers kjøredata.", "Domene": "Enkeltdomene — spesialisert på autonom kjøring."}},
+    {name:"Boston Dyn.", color:"#2c3e50", allAxes:{Læringsmåte:2,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:0,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://bostondynamics.com", axisReasons:{"Læringsmåte": "Forsterkningslæring — robotene lærer å bevege seg via millioner av simuleringer.", "Formål": "Preskriptiv — utfører fysiske oppgaver autonomt.", "Autonomi": "Autonom — beveger seg og handler uten menneskelig kontroll.", "Forklarbarhet": "Delvis forklarbar — bevegelsesplanlegging kan dokumenteres.", "Datatype": "Multimodal — kamera, lidar, kraftsensorer og inertialmålere.", "Sanntid": "Ekte sanntid — reagerer på miljøet på millisekunder.", "Etikk": "Etisk — primært industri- og redningsformål, ikke våpen.", "Risiko": "Middels — fysiske roboter kan skade mennesker ved feil.", "Robusthet": "Robust — designet for krevende fysiske miljøer.", "Menneskepåvirkning": "Indirekte — kan erstatte menneskelig arbeid i farlige miljøer.", "Tilpasningsevne": "Selvlærende — forbedrer bevegelsesmønstre kontinuerlig.", "Domene": "Enkeltdomene — spesialisert på fysisk robotikk og bevegelse."}},
+    {name:"DJI-drone",  color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:1,Datatype:2,Sanntid:2,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:0}, url:"https://dji.com", axisReasons:{"Læringsmåte": "Veiledet læring for hindringssunngåelse og automatisk landing.", "Formål": "Preskriptiv — utfører flygeoppdrag og bildeinnsamling autonomt.", "Autonomi": "Autonom — kan fly forhåndsprogrammerte ruter uten pilot.", "Forklarbarhet": "Delvis forklarbar — flygekontrollsystemet er dokumenterbart.", "Datatype": "Multimodal — kamera, GPS, barometer og hindringssensorer.", "Sanntid": "Ekte sanntid — reagerer på hindringer og vind umiddelbart.", "Etikk": "Tvetydig — brukes til overvåkning og kan krenke personvern.", "Risiko": "Middels — kan krasje og skade personer eller eiendom.", "Robusthet": "Moderat — god i normale forhold, sårbar for ekstremvær.", "Menneskepåvirkning": "Indirekte — brukes til overvåkning og inspeksjon.", "Tilpasningsevne": "Periodisk — firmwareoppdateringer med nye funksjoner.", "Domene": "Enkeltdomene — spesialisert på autonom flygning."}},
+    {name:"Industrirob.",color:"#27ae60", allAxes:{Læringsmåte:0,Formål:2,Autonomi:2,Forklarbarhet:1,Datatype:0,Sanntid:2,Etikk:0,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:0,Domene:0}, url:"https://abb.com/robotics", axisReasons:{"Læringsmåte": "Veiledet læring og klassisk programmering for presise bevegelser.", "Formål": "Preskriptiv — utfører spesifikke fysiske oppgaver på fabrikk.", "Autonomi": "Autonom — opererer i loop uten menneskelig innblanding.", "Forklarbarhet": "Delvis forklarbar — bevegelsesprogrammet er dokumentert.", "Datatype": "Strukturert sensordata fra fabrikksystemer.", "Sanntid": "Ekte sanntid — presise bevegelser på millisekunder.", "Etikk": "Etisk — utfører farlig arbeid og beskytter menneskelig helse.", "Risiko": "Middels — kan skade arbeidere ved feil, men nøye regulert.", "Robusthet": "Robust — designet for 24/7 drift i tøffe industriforhold.", "Menneskepåvirkning": "Indirekte — erstatter repetitivt menneskelig arbeid.", "Tilpasningsevne": "Statisk — programmeres for én oppgave og endres sjelden.", "Domene": "Enkeltdomene — spesialisert på industriell automatisering."}},
+  ],
+
+  "Søk & assistent": [
+    {name:"Google Søk", color:"#2980b9", allAxes:{Læringsmåte:1,Formål:1,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:1,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:1}, url:"https://google.com", axisReasons:{"Læringsmåte": "Ikke-veiledet og veiledet læring på søkeatferd og klikkmønstre.", "Formål": "Prediktiv — forutsier hvilke resultater som er mest relevante for søket.", "Autonomi": "Menneske-i-løkka — rangerer resultater, men brukeren velger.", "Forklarbarhet": "Svart boks — PageRank og ML-lagene er proprietære.", "Datatype": "Primært ustrukturert tekst fra hele internett.", "Sanntid": "Ekte sanntid — indekserer og svarer på millisekunder.", "Etikk": "Tvetydig — kan påvirke valg og informasjonstilgang globalt.", "Risiko": "Middels — kontrollerer informasjonstilgangen til milliarder av mennesker.", "Robusthet": "Robust — ekstremt velprøvd med global infrastruktur.", "Menneskepåvirkning": "Indirekte — påvirker informasjonstilgang og meningsdannelse.", "Tilpasningsevne": "Selvlærende — kontinuerlig forbedring fra søkeatferd.", "Domene": "Tverrfaglig — brukes på tvers av alle emner og bransjer."}},
+    {name:"Siri",        color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:2,Sanntid:2,Etikk:0,Risiko:0,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:1}, url:"https://apple.com/siri", axisReasons:{"Læringsmåte": "Veiledet læring på tale- og tekstdata fra Apple-enheter.", "Formål": "Preskriptiv — utfører oppgaver og svarer på spørsmål på kommando.", "Autonomi": "Menneske-i-løkka — handler kun på direkte kommando.", "Forklarbarhet": "Svart boks — Apples interne modeller er ikke offentlige.", "Datatype": "Multimodal — tale, tekst og kontekst fra enheten.", "Sanntid": "Ekte sanntid — svarer umiddelbart på talekommandoer.", "Etikk": "Etisk — Apple har sterkt fokus på personvern og on-device prosessering.", "Risiko": "Lav — begrenset til enkle assistentoppgaver.", "Robusthet": "Moderat — fungerer godt på vanlige oppgaver, sliter med komplekse forespørsler.", "Menneskepåvirkning": "Indirekte — letter hverdagsoppgaver, men ingen store livskonsekvenser.", "Tilpasningsevne": "Periodisk — oppdateres med iOS-oppdateringer.", "Domene": "Tverrfaglig — brukes til mange ulike oppgaver på Apple-enheter."}},
+    {name:"Alexa",       color:"#16a085", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:1,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:1}, url:"https://alexa.amazon.com", axisReasons:{"Læringsmåte": "Veiledet læring på stemmekommandoer og smarthjem-interaksjoner.", "Formål": "Preskriptiv — utfører handlinger og svarer på spørsmål via stemme.", "Autonomi": "Menneske-i-løkka — handler kun på kommando.", "Forklarbarhet": "Svart boks — Amazon deler ikke interndetaljer.", "Datatype": "Primært lyd og stemmedata.", "Sanntid": "Ekte sanntid — svarer umiddelbart på talekommandoer.", "Etikk": "Tvetydig — har vært kritisert for utilsiktet opptak og deling av private samtaler.", "Risiko": "Middels — lytter kontinuerlig i hjemmet og samler sensitive data.", "Robusthet": "Moderat — god på enkle oppgaver, begrenset på komplekse.", "Menneskepåvirkning": "Indirekte — kontrollerer smarthjem, men ingen alvorlige livskonsekvenser.", "Tilpasningsevne": "Periodisk — oppdateres regelmessig med nye ferdigheter.", "Domene": "Tverrfaglig — brukes til smarthjem, shopping og informasjon."}},
+    {name:"Google Maps", color:"#27ae60", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:1,Datatype:2,Sanntid:2,Etikk:0,Risiko:0,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://maps.google.com", axisReasons:{"Læringsmåte": "Veiledet læring på kart-, trafikk- og brukerdata.", "Formål": "Preskriptiv — anbefaler beste rute basert på sanntidstrafikk.", "Autonomi": "Menneske-i-løkka — foreslår rute, men brukeren kjører.", "Forklarbarhet": "Delvis forklarbar — viser tydelig hvorfor en rute er valgt.", "Datatype": "Multimodal — kart, GPS, trafikk, bilder og brukeranmeldelser.", "Sanntid": "Ekte sanntid — oppdaterer ruter basert på live-trafikk.", "Etikk": "Etisk — lav risiko, men samler bevegelsesdata om brukere.", "Risiko": "Lav — navigasjonsfeil kan være irriterende, sjelden farlig.", "Robusthet": "Robust — ekstremt velprøvd globalt over mange år.", "Menneskepåvirkning": "Indirekte — påvirker reisevalg, men ingen alvorlige konsekvenser.", "Tilpasningsevne": "Selvlærende — forbedres kontinuerlig fra milliarder av brukere.", "Domene": "Enkeltdomene — spesialisert på navigasjon og kartdata."}},
+    {name:"Perplexity",  color:"#d35400", allAxes:{Læringsmåte:0,Formål:1,Autonomi:1,Forklarbarhet:1,Datatype:1,Sanntid:2,Etikk:0,Risiko:1,Robusthet:1,Menneskepåvirkning:1,Tilpasningsevne:1,Domene:1}, url:"https://perplexity.ai", axisReasons:{"Læringsmåte": "Basert på store språkmodeller trent med veiledet læring.", "Formål": "Prediktiv — søker og oppsummerer informasjon med kildehenvisninger.", "Autonomi": "Menneske-i-løkka — søker autonomt, men brukeren styrer spørsmålet.", "Forklarbarhet": "Delvis forklarbar — viser alltid hvilke kilder svaret er basert på.", "Datatype": "Primært ustrukturert tekst fra internett.", "Sanntid": "Ekte sanntid — søker og svarer på sekunder.", "Etikk": "Etisk — transparent om kilder og usikkerhet.", "Risiko": "Middels — kan gi feil sammendrag av komplekse temaer.", "Robusthet": "Moderat — god på faktaspørsmål, svakere på nyanserte vurderinger.", "Menneskepåvirkning": "Indirekte — påvirker informasjonstilgang og forskning.", "Tilpasningsevne": "Periodisk — oppdateres med nye modeller og indekser.", "Domene": "Tverrfaglig — brukes på tvers av alle fagområder."}},
+  ],
+
+  "Medisinsk KI": [
+    {name:"AlphaFold",   color:"#2980b9", allAxes:{Læringsmåte:0,Formål:0,Autonomi:2,Forklarbarhet:1,Datatype:0,Sanntid:0,Etikk:0,Risiko:0,Robusthet:2,Menneskepåvirkning:0,Tilpasningsevne:0,Domene:0}, url:"https://alphafold.ebi.ac.uk", axisReasons:{"Læringsmåte": "Veiledet læring på kjente proteinstrukturer fra PDB-databasen.", "Formål": "Deskriptiv — forutsier 3D-strukturen til proteiner fra aminosyresekvensen.", "Autonomi": "Autonom — beregner strukturer uten menneskelig innblanding.", "Forklarbarhet": "Delvis forklarbar — kan vise konfidensscore per aminosyre.", "Datatype": "Strukturert biologisk sekvensdata.", "Sanntid": "Batch — beregninger tar minutter til timer avhengig av proteinets størrelse.", "Etikk": "Etisk — brukes til medisinsk forskning uten etiske betenkeligheter.", "Risiko": "Lav — forskningsverktøy med liten risiko for direkte skade.", "Robusthet": "Robust — ekstremt presis, vant CASP-konkurransen med stor margin.", "Menneskepåvirkning": "Ingen direkte — påvirker medisinsk forskning, ikke enkeltpersoner direkte.", "Tilpasningsevne": "Statisk — modellen er ferdigtrent og publisert som verktøy.", "Domene": "Enkeltdomene — spesialisert utelukkende på proteinstrukturprediksjon."}},
+    {name:"Røntgen-KI",  color:"#c0392b", allAxes:{Læringsmåte:0,Formål:1,Autonomi:1,Forklarbarhet:1,Datatype:1,Sanntid:1,Etikk:0,Risiko:2,Robusthet:1,Menneskepåvirkning:2,Tilpasningsevne:1,Domene:0}, url:"https://www.gehealthcare.com/products/radiography", axisReasons:{"Læringsmåte": "Veiledet læring på millioner av merkede røntgenbilder med diagnoser.", "Formål": "Prediktiv — forutsier sannsynlighet for sykdom fra røntgenbilder.", "Autonomi": "Menneske-i-løkka — foreslår diagnose, lege bekrefter alltid.", "Forklarbarhet": "Delvis forklarbar — kan markere mistenkelige områder i bildet.", "Datatype": "Ustrukturert bildedata fra medisinske skannere.", "Sanntid": "Nær sanntid — analyserer bilder på sekunder.", "Etikk": "Etisk — brukes til å hjelpe pasienter, ikke skade dem.", "Risiko": "Høy — feil diagnose kan ha alvorlige konsekvenser for pasientens liv.", "Robusthet": "Moderat — god på vanlige tilfeller, usikker på sjeldne tilstander.", "Menneskepåvirkning": "Direkte — påvirker direkte hvilken behandling pasienter får.", "Tilpasningsevne": "Periodisk — retrennes med nye datasett og godkjent av helsemyndigheter.", "Domene": "Enkeltdomene — spesialisert på medisinsk bildeanalyse."}},
+    {name:"Da Vinci",    color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:2,Autonomi:1,Forklarbarhet:1,Datatype:2,Sanntid:2,Etikk:0,Risiko:2,Robusthet:2,Menneskepåvirkning:2,Tilpasningsevne:0,Domene:0}, url:"https://www.intuitive.com/en-us/products-and-services/da-vinci", axisReasons:{"Læringsmåte": "Veiledet læring kombinert med kirurgisk ekspertise for presis bevegelse.", "Formål": "Preskriptiv — utfører kirurgiske bevegelser med presisjon.", "Autonomi": "Menneske-i-løkka — kirurgen styrer alltid, roboten oversetter bevegelsene.", "Forklarbarhet": "Delvis forklarbar — bevegelseslogg og sensorfeedback er tilgjengelig.", "Datatype": "Multimodal — kamerabilde, kraftsensorer og kirurgisk input.", "Sanntid": "Ekte sanntid — bevegelsene må skje umiddelbart under operasjon.", "Etikk": "Etisk — designet for å forbedre pasientutfall og redusere komplikasjoner.", "Risiko": "Høy — feil under kirurgi kan være livstruende.", "Robusthet": "Robust — svært grundig testet og regulert av FDA.", "Menneskepåvirkning": "Direkte — påvirker direkte liv og helse under operasjon.", "Tilpasningsevne": "Statisk — fast programmert med strenge sikkerhetsbegrensninger.", "Domene": "Enkeltdomene — spesialisert på robotassistert kirurgi."}},
+    {name:"IBM Watson H.",color:"#2c3e50", allAxes:{Læringsmåte:0,Formål:1,Autonomi:1,Forklarbarhet:1,Datatype:1,Sanntid:1,Etikk:1,Risiko:2,Robusthet:1,Menneskepåvirkning:2,Tilpasningsevne:1,Domene:0}, url:"https://www.ibm.com/watson-health", axisReasons:{"Læringsmåte": "Veiledet læring på medisinsk litteratur og pasientjournaler.", "Formål": "Prediktiv — anbefaler behandlinger basert på pasientdata og forskning.", "Autonomi": "Menneske-i-løkka — leger tar alltid endelig beslutning.", "Forklarbarhet": "Delvis forklarbar — gir begrunnelse med kildehenvisninger.", "Datatype": "Primært ustrukturert medisinsk tekst og journaldata.", "Sanntid": "Nær sanntid — analyserer pasientdata på sekunder.", "Etikk": "Tvetydig — har gitt feil anbefalinger og skapt blind tillit til AI i medisin.", "Risiko": "Høy — feil medisinske anbefalinger kan skade pasienter alvorlig.", "Robusthet": "Moderat — kjent for å gi selvsikre men feilaktige anbefalinger.", "Menneskepåvirkning": "Direkte — påvirker medisinske beslutninger som angår pasienters liv.", "Tilpasningsevne": "Periodisk — oppdateres med ny medisinsk forskning.", "Domene": "Enkeltdomene — spesialisert på medisinsk beslutningsstøtte."}},
+  ],
+
+  "Forretning & analyse": [
+    {name:"Spam-filter",  color:"#c0392b", allAxes:{Læringsmåte:0,Formål:0,Autonomi:2,Forklarbarhet:1,Datatype:1,Sanntid:1,Etikk:0,Risiko:0,Robusthet:1,Menneskepåvirkning:0,Tilpasningsevne:0,Domene:0}, url:"https://support.google.com/mail/answer/6579", axisReasons:{"Læringsmåte": "Veiledet læring på millioner av merkede spam- og ikke-spam-e-poster.", "Formål": "Deskriptiv — klassifiserer e-poster som spam eller ikke.", "Autonomi": "Autonom — filtrerer automatisk uten menneskelig innblanding.", "Forklarbarhet": "Delvis forklarbar — kan vise hvilke ord og mønstre utløste filteret.", "Datatype": "Primært ustrukturert e-posttekst.", "Sanntid": "Nær sanntid — analyserer e-poster på millisekunder.", "Etikk": "Etisk — beskytter brukere mot svindel og uønsket innhold.", "Risiko": "Lav — kan feile og blokkere legitim e-post, men sjelden alvorlig.", "Robusthet": "Moderat — spammere tilpasser seg kontinuerlig og omgår filtrene.", "Menneskepåvirkning": "Ingen direkte — filtrerer e-post uten å påvirke viktige livsvalg.", "Tilpasningsevne": "Statisk — retrennes periodisk, men ikke selvlærende i sanntid.", "Domene": "Enkeltdomene — spesialisert på e-postklassifisering."}},
+    {name:"Kredittsc.",   color:"#e67e22", allAxes:{Læringsmåte:0,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:0,Sanntid:1,Etikk:2,Risiko:2,Robusthet:1,Menneskepåvirkning:2,Tilpasningsevne:1,Domene:0}, url:"https://www.experian.com/consumer-products/score-comparison.html", axisReasons:{"Læringsmåte": "Veiledet læring på historiske lånedata med merket utfall.", "Formål": "Prediktiv — forutsier sannsynligheten for at en person misligholder lån.", "Autonomi": "Autonom — beregner score uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — de fleste moderne kredittmodeller er uforklarbare.", "Datatype": "Strukturert finansiell data som inntekt, gjeld og betalingshistorikk.", "Sanntid": "Nær sanntid — beregnes ved lånesøknad.", "Etikk": "Uetisk — dokumentert for å diskriminere basert på rase og postnummer.", "Risiko": "Høy — avgjør om folk får lån til bolig, bil og utdanning.", "Robusthet": "Moderat — pålitelig på gjennomsnittlig bruker, men svak på marginale grupper.", "Menneskepåvirkning": "Direkte — avgjør direkte om enkeltpersoner får tilgang til kapital.", "Tilpasningsevne": "Periodisk — retrennes med nye data, men grunnleggende bias består.", "Domene": "Enkeltdomene — spesialisert på kredittrisikobedømming."}},
+    {name:"Svindeldetek.",color:"#27ae60", allAxes:{Læringsmåte:0,Formål:1,Autonomi:2,Forklarbarhet:0,Datatype:0,Sanntid:2,Etikk:1,Risiko:1,Robusthet:2,Menneskepåvirkning:1,Tilpasningsevne:2,Domene:0}, url:"https://www.mastercard.com/global/en/business/issuers/ai-fraud-detection.html", axisReasons:{"Læringsmåte": "Veiledet læring på historiske transaksjoner merket som svindel eller legitime.", "Formål": "Prediktiv — identifiserer mistenkelige transaksjoner i sanntid.", "Autonomi": "Autonom — blokkerer transaksjoner automatisk ved høy risiko.", "Forklarbarhet": "Svart boks — komplekse mønstre er vanskelige å forklare enkelt.", "Datatype": "Strukturert transaksjonsdata som beløp, sted og tid.", "Sanntid": "Ekte sanntid — beslutning på millisekunder ved korttransaksjoner.", "Etikk": "Tvetydig — kan urettmessig blokkere legitime transaksjoner.", "Risiko": "Middels — feil kan påvirke folks tilgang til egne penger.", "Robusthet": "Robust — ekstremt velprøvd av banker og kortselskaper globalt.", "Menneskepåvirkning": "Indirekte — beskytter mot svindel, men kan forstyrre legitim bruk.", "Tilpasningsevne": "Selvlærende — tilpasser seg kontinuerlig til nye svindelmønstre.", "Domene": "Enkeltdomene — spesialisert på finansiell svindeldeteksjon."}},
+    {name:"HR-rekrutt.",  color:"#8e44ad", allAxes:{Læringsmåte:0,Formål:1,Autonomi:1,Forklarbarhet:0,Datatype:1,Sanntid:0,Etikk:2,Risiko:2,Robusthet:1,Menneskepåvirkning:2,Tilpasningsevne:1,Domene:0}, url:"https://www.hirevue.com", axisReasons:{"Læringsmåte": "Veiledet læring på historiske ansettelsesdata — hvem ble ansatt og presterte bra.", "Formål": "Prediktiv — forutsier hvilke kandidater som passer best til stillingen.", "Autonomi": "Menneske-i-løkka — sorterer kandidater, HR tar endelig beslutning.", "Forklarbarhet": "Svart boks — det er uklart hvilke faktorer som vektes.", "Datatype": "Primært ustrukturert tekst som CVer og søknadsbrev.", "Sanntid": "Batch — analyserer søknader samlet, ikke i ekte sanntid.", "Etikk": "Uetisk — dokumentert for å reprodusere og forsterke eksisterende bias i ansettelser.", "Risiko": "Høy — kan systematisk diskriminere basert på kjønn, alder og etnisitet.", "Robusthet": "Moderat — fungerer for gjennomsnittskandidaten, svikter for atypiske profiler.", "Menneskepåvirkning": "Direkte — avgjør hvem som får jobbmuligheter og inntekt.", "Tilpasningsevne": "Periodisk — retrennes med nye ansettelsesdata.", "Domene": "Enkeltdomene — spesialisert på rekruttering og kandidatsortering."}},
+    {name:"AlphaGo",      color:"#d35400", allAxes:{Læringsmåte:2,Formål:2,Autonomi:2,Forklarbarhet:0,Datatype:1,Sanntid:2,Etikk:0,Risiko:0,Robusthet:2,Menneskepåvirkning:0,Tilpasningsevne:2,Domene:0}, url:"https://deepmind.google/research/highlighted-research/alphago/", axisReasons:{"Læringsmåte": "Forsterkningslæring — spilte mot seg selv millioner av ganger for å bli bedre.", "Formål": "Preskriptiv — velger optimalt neste trekk i Go.", "Autonomi": "Autonom — spiller uten menneskelig innblanding.", "Forklarbarhet": "Svart boks — trekkvalgene er intuitive, ikke regelbaserte.", "Datatype": "Strukturert spilltilstandsdata fra brettet.", "Sanntid": "Ekte sanntid — beregner trekk på sekunder under spill.", "Etikk": "Etisk — rent spill-KI uten etiske betenkeligheter.", "Risiko": "Lav — spiller brettspill, ingen reelle livskonsekvenser.", "Robusthet": "Robust — overgår alle menneskelige spillere uten unntak.", "Menneskepåvirkning": "Ingen direkte — påvirker kun Go-spill, ikke menneskelige livsvalg.", "Tilpasningsevne": "Selvlærende — ble bedre gjennom millioner av selvspilte partier.", "Domene": "Enkeltdomene — spesialisert utelukkende på Go."}},
+  ],
+};
+
+let activeCategory = "Alle (standard)";
+
+// ─── AXES ──────────────────────────────────────────────────────────────────
+const AXES_DEF = {
+  "Læringsmåte": {
+    labels: ["Veiledet","Ikke-veiledet","Forsterkning"],
+    desc: "Hvordan KI-systemet lærer fra data.",
+    labelDesc: [
+      "Trenes på merkede eksempler med fasit — f.eks. bilder av katter der vi sier «dette er en katt».",
+      "Finner mønstre i umerkede data på egen hånd — f.eks. grupperer kunder uten å vite hva gruppene betyr.",
+      "Lærer via belønning og straff — f.eks. spill-KI som øver seg ved å spille tusenvis av runder."
+    ]
+  },
+  "Formål": {
+    labels: ["Deskriptiv","Prediktiv","Preskriptiv"],
+    desc: "Hva er KI-systemets mål og output?",
+    labelDesc: [
+      "Beskriver hva som har skjedd — f.eks. «Salget falt 20% i mars».",
+      "Forutsier hva som vil skje — f.eks. «80% sjanse for churn neste måned».",
+      "Anbefaler hva man bør gjøre — f.eks. «Send tilbud til disse 500 kundene nå»."
+    ]
+  },
+  "Autonomi": {
+    labels: ["Menneskestyrt","Menneske-i-løkka","Autonom"],
+    desc: "Hvor mye kontroll har mennesket over beslutningene?",
+    labelDesc: [
+      "KI gir informasjon, men mennesket tar alle beslutninger.",
+      "KI foreslår, mennesket godkjenner eller avviser før handling.",
+      "KI handler helt på egen hånd uten menneskelig innblanding."
+    ]
+  },
+  "Forklarbarhet": {
+    labels: ["Svart boks","Grå boks","Hvit boks (XAI)"],
+    desc: "Hvor transparent er KI-systemets beslutningsprosess?",
+    labelDesc: [
+      "Ingen innsikt i hvordan beslutninger tas — f.eks. dype nevrale nettverk.",
+      "Delvis forklarbar — man kan se noen faktorer, men ikke hele bildet.",
+      "Fullt forklarbar — man kan se nøyaktig hvilke faktorer som veide inn og hvorfor."
+    ]
+  },
+  "Datatype": {
+    labels: ["Strukturert","Ustrukturert","Multimodal"],
+    desc: "Hvilken type data jobber KI-systemet med?",
+    labelDesc: [
+      "Ryddig tabelldata med faste kolonner — f.eks. regneark, databaser.",
+      "Fritekst, bilder, lyd — data uten fast struktur.",
+      "Kombinasjon av flere datatyper samtidig — f.eks. tekst + bilde + lyd."
+    ]
+  },
+  "Sanntid": {
+    labels: ["Batch","Nær sanntid","Ekte sanntid"],
+    desc: "Hvor raskt behandler og reagerer KI-systemet på data?",
+    labelDesc: [
+      "Behandler store datamengder av gangen — f.eks. månedlig rapportgenerering.",
+      "Reagerer innen sekunder til minutter — f.eks. e-postrekommandasjoner.",
+      "Reagerer umiddelbart (millisekunder) — f.eks. selvkjørende bil."
+    ]
+  },
+  "Etikk": {
+    labels: ["Etisk","Tvetydig","Uetisk"],
+    desc: "Risiko for etiske brudd — i hvilken grad systemet kan krenke rettigheter, diskriminere eller manipulere.",
+    labelDesc: [
+      "Lav risiko for etiske brudd. Systemet er transparent, rettferdig og har liten negativ påvirkning på mennesker eller samfunn. F.eks. spam-filter, værvarsling, sjakk-KI.",
+      "Middels risiko for etiske brudd. Systemet kan ha utilsiktede konsekvenser som bias, personvernutfordringer eller manipulasjon, men uten klar ondsinnet hensikt. F.eks. reklamemålretting, ansiktsgjenkjenning, sosiale medier-algoritmer.",
+      "Høy risiko for etiske brudd. Systemet krenker rettigheter, diskriminerer, overvåker uten samtykke eller manipulerer bevisst. F.eks. masseovervåkning, deepfakes brukt til svindel, diskriminerende kredittscoring."
+    ]
+  },
+  "Risiko": {
+    labels: ["Lav risiko","Middels risiko","Høy risiko"],
+    desc: "Hvor stor potensiell skade kan systemet påføre mennesker eller samfunn? (EU AI Act)",
+    labelDesc: [
+      "Minimal risiko — systemet har liten eller ingen påvirkning på viktige beslutninger. F.eks. spam-filter, sjakk-KI, værvarsling.",
+      "Begrenset risiko — systemet påvirker beslutninger, men med menneskelig kontroll. F.eks. chatboter, reklamemålretting, HR-verktøy.",
+      "Høy risiko — systemet brukes i kritiske domener som helse, justis, kreditt eller overvåkning. F.eks. ansiktsgjenkjenning, medisinsk diagnose-KI."
+    ]
+  },
+  "Robusthet": {
+    labels: ["Skjør","Moderat","Robust"],
+    desc: "Hvor pålitelig er systemet under uventede situasjoner, feil eller angrep? (NIST AI RMF)",
+    labelDesc: [
+      "Skjør — systemet svikter lett ved uvanlige input, støy eller endringer i data. Lite testet for edge cases.",
+      "Moderat — systemet håndterer de fleste situasjoner, men kan feile ved ekstreme eller uventede scenarioer.",
+      "Robust — systemet er grundig testet, motstandsdyktig mot angrep (adversarial inputs) og fungerer pålitelig i kritiske miljøer."
+    ]
+  },
+  "Menneskepåvirkning": {
+    labels: ["Ingen","Indirekte","Direkte"],
+    desc: "I hvilken grad påvirker systemets output menneskers liv, rettigheter eller muligheter? (OECD)",
+    labelDesc: [
+      "Ingen direkte menneskepåvirkning — systemet optimerer prosesser eller maskiner uten å berøre enkeltpersoner. F.eks. industrirobot, logistikkoptimering.",
+      "Indirekte påvirkning — systemets beslutninger påvirker mennesker, men gjennom et mellomledd. F.eks. prisalgoritmer, innholdsfiltrering.",
+      "Direkte påvirkning — systemet tar eller anbefaler beslutninger som direkte berører enkeltmenneskers liv. F.eks. lånesøknader, straffeutmåling, ansettelse."
+    ]
+  },
+  "Tilpasningsevne": {
+    labels: ["Statisk","Periodisk","Selvlærende"],
+    desc: "Kan systemet lære og forbedre seg etter at det er satt i drift? (INSYTE 2024)",
+    labelDesc: [
+      "Statisk — modellen er låst etter trening og endrer seg ikke basert på nye data i produksjon.",
+      "Periodisk oppdatert — systemet retrennes eller finjusteres med jevne mellomrom.",
+      "Selvlærende — systemet tilpasser seg kontinuerlig basert på nye data og erfaringer i sanntid."
+    ]
+  },
+  "Domene": {
+    labels: ["Enkeltdomene","Tverrfaglig","Universell"],
+    desc: "Hvilket bruksområde er systemet designet for? (OECD / TÜV AI Taxonomy)",
+    labelDesc: [
+      "Enkeltdomene — systemet er spesialisert for én bransje eller oppgave. F.eks. medisinsk bildeanalyse, juridisk dokumentgjennomgang.",
+      "Tverrfaglig — systemet brukes på tvers av flere domener, men er ikke universelt. F.eks. ChatGPT brukt i både jus, medisin og utdanning.",
+      "Universell — systemet er designet for å løse et bredt spekter av oppgaver på tvers av alle domener."
+    ]
+  }
+};
+
+const AXIS_NAMES = Object.keys(AXES_DEF);
+const PALETTE = ["#c0392b","#e67e22","#f39c12","#27ae60","#16a085","#2980b9","#8e44ad","#2c3e50","#d35400","#1abc9c"];
+const X_BG = ["#fde8e8","#fef3e2","#fef9e7","#e8ffe8","#e8f0ff","#fff0e8","#f0e8ff"];
+const Y_BG = ["#e8f4fd","#e8f8f5","#f0e6ff","#fde8e8","#e8ffe8","#fff8e8","#e8f0ff"];
+
+let axes = { x: "Etikk", y: "Autonomi" };
+
+// Examples — starts empty, populated by category selection
+let examples = [];
+
+let selectedColor = PALETTE[5];
+let presetX = null, presetY = null;
+let pendingAllAxes = null;
+let pendingAxisReasons = {};
+let currentQuestions = [];
+
+// Get x/y values for current axes
+function getXY(ex) {
+  return {
+    x: ex.allAxes[axes.x] !== undefined ? ex.allAxes[axes.x] : 0,
+    y: ex.allAxes[axes.y] !== undefined ? ex.allAxes[axes.y] : 0
+  };
+}
+
+// ─── GRID COLORS ───────────────────────────────────────────────────────────
+function blend(c1, c2) {
+  const p = x => parseInt(x, 16);
+  const r1=p(c1.slice(1,3)),g1=p(c1.slice(3,5)),b1=p(c1.slice(5,7));
+  const r2=p(c2.slice(1,3)),g2=p(c2.slice(3,5)),b2=p(c2.slice(5,7));
+  return `rgb(${Math.round((r1+r2)/2)},${Math.round((g1+g2)/2)},${Math.round((b1+b2)/2)})`;
+}
+
+// ─── AXIS TOOLTIP ──────────────────────────────────────────────────────────
+function showAxisTip(axisKey, e) {
+  const ax = AXES_DEF[axisKey];
+  const tip = document.getElementById('axisTip');
+  tip.innerHTML = `
+    <div class="at-title">${axisKey}</div>
+    <div class="at-desc">${ax.desc}</div>
+    ${ax.labels.map((l,i) => `
+      <div class="at-val">
+        <div class="at-num">${i}</div>
+        <div>
+          <div class="at-vname">${l}</div>
+          <div class="at-vdesc">${ax.labelDesc[i]}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+  positionTip(tip, e);
+  tip.classList.add('on');
+}
+function hideAxisTip() { document.getElementById('axisTip').classList.remove('on'); }
+
+function positionTip(tip, e) {
+  const margin = 16;
+  tip.style.left = (e.clientX + margin) + 'px';
+  tip.style.top = Math.min(e.clientY, window.innerHeight - 300) + 'px';
+}
+
+// ─── POPULATE SELECTS ──────────────────────────────────────────────────────
+function populateSelects() {
+  ['axisX','axisY'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = AXIS_NAMES.map(n => `<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+  });
+}
+
+// ─── REBUILD ───────────────────────────────────────────────────────────────
+function rebuild() {
+  axes.x = document.getElementById('axisX').value;
+  axes.y = document.getElementById('axisY').value;
+  renderAxisLabels();
+  renderGrid();
+  renderExList();
+  setupAxisHelp();
+}
+
+function setupAxisHelp() {
+  const hx = document.getElementById('helpX');
+  const hy = document.getElementById('helpY');
+  hx.onclick = (e) => { showAxisTip(axes.x, e); e.stopPropagation(); };
+  hy.onclick = (e) => { showAxisTip(axes.y, e); e.stopPropagation(); };
+  document.getElementById('xAxisLabel').textContent = axes.x;
+  document.getElementById('yAxisLabel').textContent = axes.y;
+  document.getElementById('xAxisLabel').onclick = (e) => showAxisTip(axes.x, e);
+  document.getElementById('yAxisLabel').onclick = (e) => showAxisTip(axes.y, e);
+  document.addEventListener('click', hideAxisTip, {once:true});
+}
+
+// ─── RENDER AXIS LABELS ────────────────────────────────────────────────────
+function renderAxisLabels() {
+  const ax = AXES_DEF[axes.x], ay = AXES_DEF[axes.y];
+  const xLabels = document.getElementById('xLabels');
+  const yLabels = document.getElementById('yLabels');
+
+  xLabels.innerHTML = ax.labels.map((l,i) =>
+    `<div class="x-label" style="width:200px" data-axis="x" data-val="${i}">${l}</div>`
+  ).join('');
+
+  yLabels.innerHTML = [...ay.labels].reverse().map((l,i) =>
+    `<div class="y-label" style="height:200px;display:flex;align-items:center;justify-content:flex-end" data-axis="y" data-val="${2-i}">${l}</div>`
+  ).join('');
+
+  document.querySelectorAll('.x-label, .y-label').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const axKey = el.dataset.axis === 'x' ? axes.x : axes.y;
+      const val = parseInt(el.dataset.val);
+      const axDef = AXES_DEF[axKey];
+      const tip = document.getElementById('axisTip');
+      tip.innerHTML = `
+        <div class="at-title">${axDef.labels[val]}</div>
+        <div class="at-desc">${axDef.labelDesc[val]}</div>
+      `;
+      positionTip(tip, e);
+      tip.classList.add('on');
+    });
+    el.addEventListener('mouseleave', hideAxisTip);
+  });
+}
+
+// ─── RENDER GRID ───────────────────────────────────────────────────────────
+function renderGrid() {
+  const ax = AXES_DEF[axes.x], ay = AXES_DEF[axes.y];
+  const grid = document.getElementById('theGrid');
+  grid.innerHTML = '';
+
+  for (let y = 2; y >= 0; y--) {
+    for (let x = 0; x < 3; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.background = blend(X_BG[x % X_BG.length], Y_BG[y % Y_BG.length]);
+
+      cell.addEventListener('click', () => openModal(x, y));
+
+      cell.addEventListener('mouseenter', e => {
+        const exsHere = examples.filter(ex => { const p = getXY(ex); return p.x===x && p.y===y; });
+        if (exsHere.length === 0) {
+          const tip = document.getElementById('axisTip');
+          tip.innerHTML = `
+            <div class="at-title" style="font-size:0.72rem">${ax.labels[x]} × ${ay.labels[y]}</div>
+            <div class="at-desc">${ax.labelDesc[x]}</div>
+            <div class="at-desc" style="margin-top:4px">${ay.labelDesc[y]}</div>
+            <div style="margin-top:8px;font-family:'Space Mono',monospace;font-size:0.55rem;color:#1a1a14;opacity:0.5">Klikk for å legge til eksempel her</div>
+          `;
+          positionTip(tip, e);
+          tip.classList.add('on');
+        }
+      });
+      cell.addEventListener('mousemove', e => {
+        const exsHere = examples.filter(ex => { const p = getXY(ex); return p.x===x && p.y===y; });
+        if (exsHere.length === 0) positionTip(document.getElementById('axisTip'), e);
+      });
+      cell.addEventListener('mouseleave', hideAxisTip);
+
+      const hint = document.createElement('div');
+      hint.className = 'cell-add-hint';
+      hint.textContent = '+ legg til';
+      cell.appendChild(hint);
+
+      // Draw examples
+      const exsHere = examples.filter(ex => { const p = getXY(ex); return p.x===x && p.y===y; });
+      exsHere.forEach(ex => {
+        const dot = document.createElement('div');
+        dot.className = 'ex-dot';
+        dot.style.background = ex.color;
+        const words = ex.name.split(' ');
+        dot.textContent = words.length > 1 ? words.map(w => w[0]).join('') : ex.name.slice(0,5);
+        dot.title = ex.name;
+
+        dot.addEventListener('mouseenter', e2 => {
+
+          hideAxisTip();
+          const p = getXY(ex);
+          document.getElementById('tip-name').textContent = ex.name;
+          const xLabel = ax.labels[p.x];
+          const yLabel = ay.labels[p.y];
+          const xReason = ex.axisReasons && ex.axisReasons[axes.x] ? `<div style="opacity:0.75;font-size:0.58rem;margin-top:2px;line-height:1.4;font-style:italic">${ex.axisReasons[axes.x]}</div>` : '';
+          const yReason = ex.axisReasons && ex.axisReasons[axes.y] ? `<div style="opacity:0.75;font-size:0.58rem;margin-top:2px;line-height:1.4;font-style:italic">${ex.axisReasons[axes.y]}</div>` : '';
+          document.getElementById('tip-vals').innerHTML =
+            `<div style="margin-bottom:4px"><span style="opacity:0.6;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em">${axes.x}</span><br><strong>${xLabel}</strong>${xReason}</div>` +
+            `<div><span style="opacity:0.6;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em">${axes.y}</span><br><strong>${yLabel}</strong>${yReason}</div>` +
+            (ex.url ? `<div style="margin-top:6px;opacity:0.6;font-size:0.5rem">🔗 klikk for å åpne</div>` : '');
+          const tip = document.getElementById('tooltip');
+          tip.style.left = (e2.clientX+14)+'px';
+          tip.style.top = (e2.clientY-10)+'px';
+          tip.classList.add('on');
+          e2.stopPropagation();
+        });
+        dot.addEventListener('mousemove', e2 => {
+          const tip = document.getElementById('tooltip');
+          tip.style.left = (e2.clientX+14)+'px';
+          tip.style.top = (e2.clientY-10)+'px';
+          e2.stopPropagation();
+        });
+        dot.addEventListener('mouseleave', () => document.getElementById('tooltip').classList.remove('on'));
+        dot.addEventListener('click', e2 => {
+          e2.stopPropagation();
+          if (ex.url) window.open(ex.url, '_blank');
+        });
+        if (ex.url) { dot.style.cursor = 'pointer'; dot.title = ex.name + ' — klikk for å åpne'; }
+        cell.appendChild(dot);
+      });
+
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ─── RENDER EXAMPLE LIST ───────────────────────────────────────────────────
+function renderExList() {
+  const ax = AXES_DEF[axes.x], ay = AXES_DEF[axes.y];
+  const el = document.getElementById('exList');
+  el.innerHTML = '';
+  examples.forEach((ex, i) => {
+    const p = getXY(ex);
+    const card = document.createElement('div');
+    card.className = 'ex-card';
+    card.innerHTML = `
+      <div class="ex-swatch" style="background:${ex.color}"></div>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-pos">${ax.labels[p.x]} · ${ay.labels[p.y]}</div>
+      </div>
+      <button class="ex-delete" onclick="deleteEx(${i},event)" title="Slett">✕</button>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function deleteEx(i, e) {
+  e.stopPropagation();
+  examples.splice(i,1);
+  renderGrid(); renderExList();
+  saveToStorage();
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(px, py) {
+  presetX = px; presetY = py;
+  document.getElementById('step1').style.display = '';
+  document.getElementById('step1b').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('newName').value = '';
+  document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('analyzeBtnText').textContent = '✦ Neste';
+  pendingAllAxes = null;
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('newName').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function backToStep1() {
+  document.getElementById('step1').style.display = '';
+  document.getElementById('step1b').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+}
+
+function updateValDesc(axis) {
+  const selId = axis === 'x' ? 'newX' : 'newY';
+  const descId = axis === 'x' ? 'xValDesc' : 'yValDesc';
+  const axKey = axis === 'x' ? axes.x : axes.y;
+  const val = parseInt(document.getElementById(selId).value);
+  const axDef = AXES_DEF[axKey];
+  const desc = document.getElementById(descId);
+  desc.innerHTML = `<strong>${axDef.labels[val]}</strong>${axDef.labelDesc[val]}`;
+  desc.classList.add('visible');
+}
+
+function buildStep2(name, sugX, sugY, reasoning) {
+  const ax = AXES_DEF[axes.x], ay = AXES_DEF[axes.y];
+  document.getElementById('step2title').textContent = name;
+  document.getElementById('lx').textContent = axes.x;
+  document.getElementById('ly').textContent = axes.y;
+  document.getElementById('aiReasoning').innerHTML = `<strong>Forslag:</strong> ${reasoning}`;
+  document.getElementById('newX').innerHTML = ax.labels.map((l,j) => `<option value="${j}" ${j===sugX?'selected':''}>${l}</option>`).join('');
+  document.getElementById('newY').innerHTML = ay.labels.map((l,j) => `<option value="${j}" ${j===sugY?'selected':''}>${l}</option>`).join('');
+  updateValDesc('x'); updateValDesc('y');
+
+  const cp = document.getElementById('colorPicker');
+  cp.innerHTML = '';
+  PALETTE.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'color-opt' + (c===selectedColor?' selected':'');
+    d.style.background = c;
+    d.onclick = () => {
+      selectedColor = c;
+      document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    cp.appendChild(d);
+  });
+
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step1b').style.display = 'none';
+  document.getElementById('step2').style.display = '';
+}
+
+function skipToManual() {
+  const name = document.getElementById('step1bTitle').textContent || document.getElementById('newName').value.trim();
+  buildStep2(name, 0, 0, 'Du velger plassering selv — bruk dropdownene under.');
+}
+
+// ─── GENERATE QUESTIONS ────────────────────────────────────────────────────
+async function generateQuestions() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { document.getElementById('newName').style.borderColor='#c0392b'; return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('analyzeBtnText').innerHTML = `<span style="display:flex;align-items:center;gap:6px"><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span>Lager spørsmål...</span>`;
+
+  const ax = AXES_DEF[axes.x], ay = AXES_DEF[axes.y];
+  const prompt = `Du er en KI-ekspert som hjelper vanlige folk å klassifisere KI-systemer uten fagkunnskap.\n\nKI-systemet heter: "${name}"\n\nLag 2-3 enkle spørsmål for å avgjøre hvor systemet havner på disse aksene:\nX-AKSE: "${axes.x}" med verdier: 0="${ax.labels[0]}", 1="${ax.labels[1]}", 2="${ax.labels[2]}"\nY-AKSE: "${axes.y}" med verdier: 0="${ay.labels[0]}", 1="${ay.labels[1]}", 2="${ay.labels[2]}"\n\nRegler:\n- Vanlig norsk, UTEN fagbegreper\n- Bruk kontekst fra systemet\n- 2-3 svaralternativer per spørsmål\n\nSvar KUN med JSON: {"questions": [{"q": "spørsmålstekst", "options": ["A", "B", "C"]}, ...]}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    showQuestions(name, parsed.questions);
+  } catch(e) {
+    skipToManual();
+  } finally {
+    btn.disabled = false;
+    document.getElementById('analyzeBtnText').textContent = '✦ Neste';
+  }
+}
+
+function showQuestions(name, questions) {
+  currentQuestions = questions;
+  document.getElementById('step1bTitle').textContent = name;
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = '';
+  questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.innerHTML = `<div class="q-text">${q.q}</div><div class="q-options" id="opts-${qi}"></div>`;
+    const optsDiv = card.querySelector('.q-options');
+    q.options.forEach((opt, oi) => {
+      const lbl = document.createElement('label');
+      lbl.className = 'q-option';
+      lbl.innerHTML = `<input type="radio" name="q${qi}" value="${oi}"> ${opt}`;
+      lbl.querySelector('input').addEventListener('change', () => {
+        optsDiv.querySelectorAll('.q-option').forEach(l => l.classList.remove('selected'));
+        lbl.classList.add('selected');
+      });
+      optsDiv.appendChild(lbl);
+    });
+    container.appendChild(card);
+  });
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step1b').style.display = '';
+}
+
+// ─── SUBMIT ANSWERS ────────────────────────────────────────────────────────
+async function submitAnswers() {
+  const name = document.getElementById('step1bTitle').textContent;
+  const answers = currentQuestions.map((q, qi) => {
+    const checked = document.querySelector(`input[name="q${qi}"]:checked`);
+    return checked ? `Spørsmål: "${q.q}" → Svar: "${q.options[parseInt(checked.value)]}"` : null;
+  }).filter(Boolean);
+
+  if (answers.length < currentQuestions.length) {
+    document.getElementById('questionsContainer').style.outline = '2px solid #c0392b';
+    setTimeout(() => document.getElementById('questionsContainer').style.outline = '', 1500);
+    return;
+  }
+
+  const btn = document.getElementById('submitAnswersBtn');
+  btn.disabled = true;
+  document.getElementById('submitAnswersTxt').innerHTML = `<span style="display:flex;align-items:center;gap:6px"><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span>Analyserer...</span>`;
+
+  const allAxesList = AXIS_NAMES.map(k => {
+    const a = AXES_DEF[k];
+    return `"${k}": 0="${a.labels[0]}", 1="${a.labels[1]}", 2="${a.labels[2]}"`;
+  }).join('\n');
+
+  const prompt = `Du er en KI-ekspert. Klassifiser KI-systemet "${name}" basert på brukerens svar.\n\nBrukerens svar:\n${answers.join('\n')}\n\nKlassifiser på ALLE disse aksene (0, 1 eller 2):\n${allAxesList}\n\nSvar KUN med JSON: {"allAxes": {"Læringsmåte":0,"Formål":0,"Autonomi":0,"Forklarbarhet":0,"Datatype":0,"Sanntid":0,"Etikk":0,"Risiko":0,"Robusthet":0,"Menneskepåvirkning":0,"Tilpasningsevne":0,"Domene":0}, "reasoning": "1 setning på norsk uten fagbegreper"}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    pendingAllAxes = parsed.allAxes || {};
+    pendingAxisReasons = parsed.axisReasons || {};
+    const sugX = pendingAllAxes[axes.x] !== undefined ? pendingAllAxes[axes.x] : 0;
+    const sugY = pendingAllAxes[axes.y] !== undefined ? pendingAllAxes[axes.y] : 0;
+    buildStep2(name, sugX, sugY, parsed.reasoning);
+  } catch(e) {
+    pendingAllAxes = null;
+    buildStep2(name, 0, 0, 'Kunne ikke analysere — velg selv under.');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('submitAnswersTxt').textContent = '✦ Plasser i rutenettet';
+  }
+}
+
+// ─── ADD EXAMPLE ───────────────────────────────────────────────────────────
+function addExample() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { document.getElementById('newName').style.borderColor='#c0392b'; return; }
+  const xVal = presetX !== null ? presetX : +document.getElementById('newX').value;
+  const yVal = presetY !== null ? presetY : +document.getElementById('newY').value;
+
+  const urlVal = document.getElementById('newUrl').value.trim();
+  const allAxes = pendingAllAxes || {};
+  allAxes[axes.x] = xVal;
+  allAxes[axes.y] = yVal;
+  AXIS_NAMES.forEach(ax => { if (allAxes[ax] === undefined) allAxes[ax] = 0; });
+
+  const newEx = { name, color: selectedColor, allAxes };
+  if (urlVal) newEx.url = urlVal.startsWith('http') ? urlVal : 'https://' + urlVal;
+  if (pendingAxisReasons && Object.keys(pendingAxisReasons).length > 0) newEx.axisReasons = pendingAxisReasons;
+  pendingAxisReasons = {};
+  examples.push(newEx);
+  pendingAllAxes = null;
+  closeModal();
+  renderGrid(); renderExList();
+  saveToStorage();
+}
+
+document.getElementById('newName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addExample();
+  if (e.key === 'Escape') closeModal();
+});
+
+// ─── CUSTOM AXIS CREATOR ───────────────────────────────────────────────────
+let pendingAxis = null;
+
+function toggleCreator() {
+  document.getElementById('axisCreatorPanel').classList.toggle('open');
+}
+
+function toggleCatCreator() {
+  const panel = document.getElementById('catCreatorPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open') && document.getElementById('catSystemsList').children.length === 0) {
+    addCatSystemRow();
+  }
+}
+
+function createAxis() {
+  const name = document.getElementById('newAxisName').value.trim();
+  const v0n = document.getElementById('val0name').value.trim();
+  const v0d = document.getElementById('val0desc').value.trim();
+  const v1n = document.getElementById('val1name').value.trim();
+  const v1d = document.getElementById('val1desc').value.trim();
+  const v2n = document.getElementById('val2name').value.trim();
+  const v2d = document.getElementById('val2desc').value.trim();
+  const err = document.getElementById('axisError');
+
+  if (!name || !v0n || !v1n || !v2n) { err.classList.add('on'); return; }
+  err.classList.remove('on');
+
+  pendingAxis = {
+    name, labels: [v0n, v1n, v2n],
+    desc: `Egendefinert akse: ${name}`,
+    labelDesc: [
+      v0d || v0n,
+      v1d || v1n,
+      v2d || v2n,
+    ],
+    custom: true
+  };
+
+  runMeceCheck(pendingAxis);
+}
+
+async function runMeceCheck(axisData) {
+  const btn = document.getElementById('createAxisBtn');
+  btn.textContent = '✦ Kjører MECE-sjekk...';
+  btn.disabled = true;
+
+  const existing = Object.entries(AXES_DEF).map(([k,v]) => `"${k}": [${v.labels.join(', ')}]`).join('\n');
+  const prompt = `Du er McKinsey-konsulent og MECE-ekspert. Vurder om denne nye aksen er MECE i forhold til eksisterende.\n\nNY AKSE: "${axisData.name}"\nVerdier: ${axisData.labels.join(' → ')}\n\nEKSISTERENDE AKSER:\n${existing}\n\nSvar KUN med JSON: {"approved": true, "verdict": "en setning", "overlap": null, "suggestion": null}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const result = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    showMeceResult(result, axisData);
+  } catch(e) {
+    finalizeAxis(axisData);
+  }
+}
+
+function showMeceResult(result, axisData) {
+  const panel = document.getElementById('meceResultPanel');
+  const icon = result.approved ? '✅' : '⚠️';
+  const color = result.approved ? '#27ae60' : '#e67e22';
+  panel.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:1.1rem">${icon}</span>
+      <div>
+        <div style="font-weight:700;font-size:0.72rem;color:${color};margin-bottom:4px">${result.approved ? 'MECE-godkjent' : 'MECE-advarsel'}</div>
+        <div style="font-size:0.62rem;color:var(--muted);line-height:1.6">${result.verdict}</div>
+        ${result.overlap ? `<div style="font-size:0.6rem;color:#c0392b;margin-top:4px">⚡ Overlapper med: <strong>${result.overlap}</strong></div>` : ''}
+        ${result.suggestion ? `<div style="font-size:0.6rem;color:var(--muted);margin-top:4px;font-style:italic">💡 ${result.suggestion}</div>` : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      ${!result.approved ? `<button class="btn btn-ghost" style="font-size:0.65rem;padding:6px 12px" onclick="cancelAxis()">Avbryt</button>` : ''}
+      <button class="btn btn-primary" style="font-size:0.65rem;padding:6px 12px;flex:1" onclick="finalizeAxis(pendingAxis)">${result.approved ? 'Legg til akse' : 'Legg til likevel'}</button>
+    </div>
+  `;
+  panel.style.display = 'block';
+  document.getElementById('createAxisBtn').style.display = 'none';
+}
+
+function cancelAxis() {
+  pendingAxis = null;
+  document.getElementById('meceResultPanel').style.display = 'none';
+  const btn = document.getElementById('createAxisBtn');
+  btn.textContent = '✦ Sjekk MECE og legg til';
+  btn.disabled = false;
+  btn.style.display = '';
+}
+
+function finalizeAxis(axisData) {
+  AXES_DEF[axisData.name] = axisData;
+  AXIS_NAMES.push(axisData.name);
+  X_BG.push('#e8ffe8');
+  Y_BG.push('#fff0e8');
+
+  // Add default value for all existing examples
+  examples.forEach(ex => { ex.allAxes[axisData.name] = 0; });
+
+  populateSelects();
+  ['newAxisName','val0name','val0desc','val1name','val1desc','val2name','val2desc'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('meceResultPanel').style.display = 'none';
+  document.getElementById('axisCreatorPanel').classList.remove('open');
+  pendingAxis = null;
+
+  const btn = document.getElementById('createAxisBtn');
+  btn.textContent = '✦ Sjekk MECE og legg til';
+  btn.disabled = false;
+  btn.style.display = '';
+
+  saveToStorage();
+  const toggle = document.querySelector('.axis-creator-toggle');
+  toggle.textContent = `✓ "${axisData.name}" lagt til!`;
+  toggle.style.color = '#27ae60';
+  toggle.style.borderColor = '#27ae60';
+  setTimeout(() => {
+    toggle.textContent = '+ Lag ny akse';
+    toggle.style.color = '';
+    toggle.style.borderColor = '';
+  }, 2500);
+}
+
+// ─── CATEGORY ──────────────────────────────────────────────────────────────
+const defaultExamples = []; // no default examples — use categories
+
+function populateCategorySelect() {
+  const sel = document.getElementById('categorySelect');
+  sel.innerHTML = Object.keys(CATEGORIES).map(k =>
+    `<option value="${k}">${k}</option>`
+  ).join('');
+  sel.value = "Velg type KI-applikasjon";
+}
+
+function changeCategory() {
+  const cat = document.getElementById('categorySelect').value;
+  activeCategory = cat;
+  const panel = document.getElementById('catCreatorPanel');
+
+  panel.classList.remove('open');
+  if (cat === '✏️ Definer egen type...') {
+    document.getElementById('categorySelect').value = activeCategory || 'Velg type KI-applikasjon';
+    return;
+  }
+  document.getElementById('categoryTitle').textContent =
+    (cat === 'Velg type KI-applikasjon') ? '' : cat;
+  localStorage.setItem('ki_active_category', cat);
+
+  if (CATEGORIES[cat] === null) {
+    examples = [];
+  } else if (CATEGORIES[cat] === 'all') {
+    // Merge all categories
+    const seen = new Set();
+    examples = [];
+    Object.entries(CATEGORIES).forEach(([k, v]) => {
+      if (v && v !== 'all' && Array.isArray(v)) {
+        v.forEach(ex => {
+          if (!seen.has(ex.name)) {
+            seen.add(ex.name);
+            const copy = JSON.parse(JSON.stringify(ex));
+            AXIS_NAMES.forEach(ax => { if (copy.allAxes[ax] === undefined) copy.allAxes[ax] = 0; });
+            examples.push(copy);
+          }
+        });
+      }
+    });
+  } else {
+    examples = JSON.parse(JSON.stringify(CATEGORIES[cat]));
+    examples.forEach(ex => {
+      AXIS_NAMES.forEach(ax => {
+        if (ex.allAxes[ax] === undefined) ex.allAxes[ax] = 0;
+      });
+    });
+  }
+  renderGrid();
+  renderExList();
+}
+
+let catSystemRowCount = 0;
+
+function addCatSystemRow() {
+  const list = document.getElementById('catSystemsList');
+  // Don't add more than 8
+  if (list.children.length >= 8) return;
+  const id = catSystemRowCount++;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:4px;align-items:center';
+  row.innerHTML = `
+    <input class="small" id="csys-${id}" placeholder="Systemnavn..." style="flex:1;background:var(--bg);border:1.5px solid var(--border);color:var(--text);font-family:Syne,sans-serif;font-size:0.68rem;padding:5px 8px;border-radius:6px;outline:none" />
+    <input class="small" id="curl-${id}" placeholder="URL..." style="flex:1;background:var(--bg);border:1.5px solid var(--border);color:var(--text);font-family:Syne,sans-serif;font-size:0.68rem;padding:5px 8px;border-radius:6px;outline:none" />
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:2px 5px;flex-shrink:0">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+async function createCategory() {
+  const catName = document.getElementById('newCatName').value.trim();
+  const inputs = document.querySelectorAll('[id^="csys-"]');
+  const systemNames = [...inputs].map(i => i.value.trim()).filter(Boolean);
+
+  if (!catName || systemNames.length === 0) {
+    document.getElementById('catError').classList.add('on');
+    return;
+  }
+  document.getElementById('catError').classList.remove('on');
+
+  const btn = document.getElementById('createCatBtn');
+  btn.disabled = true;
+  btn.textContent = '✦ Claude klassifiserer...';
+
+  const allAxesList = AXIS_NAMES.map(k => {
+    const a = AXES_DEF[k];
+    return `"${k}": 0="${a.labels[0]}", 1="${a.labels[1]}", 2="${a.labels[2]}"`;
+  }).join('\n');
+
+  const PALETTE_LIST = ["#c0392b","#e67e22","#f39c12","#27ae60","#16a085","#2980b9","#8e44ad","#2c3e50","#d35400","#1abc9c"];
+
+  const prompt = `Du er en KI-ekspert. Klassifiser disse KI-systemene på alle akser (0, 1 eller 2) og gi en kort forklaring (1 setning, vanlig norsk) for hver akse.\n\nSystemer: ${systemNames.join(', ')}\n\nAkser:\n${allAxesList}\n\nSvar KUN med JSON:\n{"systems": [{"name": "systemnavn", "allAxes": {"Læringsmåte": 0, "Formål": 0, "Autonomi": 0, "Forklarbarhet": 0, "Datatype": 0, "Sanntid": 0, "Etikk": 0, "Risiko": 0, "Robusthet": 0, "Menneskepåvirkning": 0, "Tilpasningsevne": 0, "Domene": 0}, "axisReasons": {"Læringsmåte": "fordi...", "Formål": "fordi...", "Autonomi": "fordi...", "Forklarbarhet": "fordi...", "Datatype": "fordi...", "Sanntid": "fordi...", "Etikk": "fordi...", "Risiko": "fordi...", "Robusthet": "fordi...", "Menneskepåvirkning": "fordi...", "Tilpasningsevne": "fordi...", "Domene": "fordi..."}}, ...]}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+
+    const newExamples = parsed.systems.map((s, i) => {
+      const ex = {
+        name: s.name,
+        color: PALETTE_LIST[i % PALETTE_LIST.length],
+        allAxes: s.allAxes
+      };
+      if (systemUrls[s.name]) ex.url = systemUrls[s.name];
+      if (s.axisReasons) ex.axisReasons = s.axisReasons;
+      return ex;
+    });
+
+    CATEGORIES[catName] = newExamples;
+    AXIS_NAMES.forEach(() => {});
+
+    // Add to dropdown
+    const sel = document.getElementById('categorySelect');
+    const opt = document.createElement('option');
+    opt.value = catName;
+    opt.textContent = catName;
+    // Insert before the "Definer egen" option
+    const defOpt = [...sel.options].find(o => o.value === '✏️ Definer egen type...');
+    sel.insertBefore(opt, defOpt);
+    sel.value = catName;
+
+    // Reset form
+    document.getElementById('newCatName').value = '';
+    document.getElementById('catSystemsList').innerHTML = '';
+    catSystemRowCount = 0;
+    document.getElementById('catCreatorPanel').classList.remove('open');
+
+    // Load the new category
+    changeCategory();
+    saveToStorage();
+
+  } catch(e) {
+    btn.textContent = '✦ Feil — prøv igjen';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ Lag kategori med Claude';
+  }
+}
+
+// ─── LOCALSTORAGE ──────────────────────────────────────────────────────────
+function saveToStorage() {
+  try {
+    // Save custom categories (not the built-in ones)
+    const builtInKeys = ["Velg type KI-applikasjon","Språkmodeller (LLM)","Bildemodeller","Anbefalingssystemer","Autonome systemer","Søk & assistent","Medisinsk KI","Forretning & analyse"];
+    const customCats = {};
+    Object.keys(CATEGORIES).forEach(k => {
+      if (!builtInKeys.includes(k) && CATEGORIES[k] !== null) {
+        customCats[k] = CATEGORIES[k];
+      }
+    });
+    localStorage.setItem('ki_custom_categories', JSON.stringify(customCats));
+    // Save custom axes
+    const builtInAxes = ["Læringsmåte","Formål","Autonomi","Forklarbarhet","Datatype","Sanntid","Etikk","Risiko","Robusthet","Menneskepåvirkning","Tilpasningsevne","Domene"];
+    const customAxes = {};
+    Object.keys(AXES_DEF).forEach(k => {
+      if (!builtInAxes.includes(k)) customAxes[k] = AXES_DEF[k];
+    });
+    localStorage.setItem('ki_custom_axes', JSON.stringify(customAxes));
+    // Save current examples (manually added)
+    localStorage.setItem('ki_examples', JSON.stringify(examples));
+    // Save active category
+    localStorage.setItem('ki_active_category', activeCategory);
+  } catch(e) { console.warn('Could not save to localStorage', e); }
+}
+
+function loadFromStorage() {
+  try {
+    // Load custom axes
+    const savedAxes = localStorage.getItem('ki_custom_axes');
+    if (savedAxes) {
+      const customAxes = JSON.parse(savedAxes);
+      Object.entries(customAxes).forEach(([k,v]) => {
+        AXES_DEF[k] = v;
+        AXIS_NAMES.push(k);
+        X_BG.push('#e8ffe8');
+        Y_BG.push('#fff0e8');
+      });
+    }
+    // Load custom categories
+    const savedCats = localStorage.getItem('ki_custom_categories');
+    if (savedCats) {
+      const customCats = JSON.parse(savedCats);
+      Object.entries(customCats).forEach(([k,v]) => {
+        CATEGORIES[k] = v;
+      });
+    }
+  } catch(e) { console.warn('Could not load from localStorage', e); }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+loadFromStorage();
+populateSelects();
+populateCategorySelect();
+
+// Restore saved category and examples
+const savedCat = localStorage.getItem('ki_active_category');
+if (savedCat && CATEGORIES[savedCat] !== undefined) {
+  document.getElementById('categorySelect').value = savedCat;
+  activeCategory = savedCat;
+}
+changeCategory();
+
+// Restore manually added examples on top
+const savedExamples = localStorage.getItem('ki_examples');
+if (savedExamples) {
+  try {
+    const parsed = JSON.parse(savedExamples);
+    // Only restore if same category
+    if (savedCat === activeCategory && parsed.length > 0) {
+      examples = parsed;
+      renderGrid(); renderExList();
+    }
+  } catch(e) {}
+}
+
+document.getElementById('axisX').value = axes.x;
+document.getElementById('axisY').value = axes.y;
+renderAxisLabels();
+renderGrid();
+renderExList();
+setupAxisHelp();
+</script>
+</body>
+</html>
